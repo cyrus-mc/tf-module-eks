@@ -5,7 +5,7 @@ data aws_ami "eks_worker" {
 
   filter {
     name = "name"
-    values = [ "amazon-eks-node-${var.cluster_version}-*" ]
+    values = [ "amazon-eks-node-${replace(var.cluster_version, "/.\\d+$/", "")}-*" ]
   }
 
   most_recent = true
@@ -125,7 +125,7 @@ resource aws_eks_cluster "main" {
   name = "${var.cluster_name}"
 
   /* desired Kubernetes master version */
-  version = "${var.cluster_version}"
+  version = "${replace(var.cluster_version, "/.\\d+$/", "")}"
 
   role_arn = "${var.cluster_role_arn}"
 
@@ -162,6 +162,7 @@ data template_file "worker_userdata" {
     cluster_name        = "${aws_eks_cluster.main.name}"
     endpoint            = "${aws_eks_cluster.main.endpoint}"
     cluster_auth_base64 = "${aws_eks_cluster.main.certificate_authority.0.data}"
+    kubelet_version     = "${var.cluster_version}"
     kubelet_extra_args  = "${lookup(var.worker_group[count.index], "kubelet_extra_args",
                                                                    local.worker_group_defaults["kubelet_extra_args"])}"
   }

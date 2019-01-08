@@ -70,7 +70,7 @@ module "eks" {
   source = "../"
 
   cluster_name    = "development"
-  cluster_version = "1.11"
+  cluster_version = "1.11.5"
 
   cluster_role_arn = "${aws_iam_role.dev_cluster.arn}"
 

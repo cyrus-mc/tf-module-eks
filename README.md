@@ -1,6 +1,6 @@
 ## Amazon Web Services EKS
 
-[![Build Status](http://jenkins.dat.com/buildStatus/icon?job=DevOps/Terraform/Modules/tf-module-eks/master)](http://jenkins.dat.com/job/DevOps/job/Terraform/job/Modules/job/tf-module-eks/)
+[![Build Status](http://jenkins.dat.com/job/DevOps/job/Terraform/job/Modules/job/tf-module-eks/job/master/badge/icon)](http://jenkins.dat.com/job/DevOps/job/Terraform/job/Modules/job/tf-module-eks/)
 
 A Terraform module to create a managed Kubernetes cluster on AWS EKS.
 
@@ -39,6 +39,30 @@ This module takes the following inputs:
   worker_count | Number of worker autoScaling groups to create. | string | 1
   worker_group | List of maps defining worker autoScaling group settings. | list | [ { "name" = "default" } ]
   worker_group_defaults | Defaults for working autoScaling group settings. | map | {}
+
+
+Both worker_group and worker_group_defaults maps accept the following keys:
+
+  Key          | Description | Type | Default
+  ------------ | ----------- | ---- | -------
+  autoscaling_enabled | Enable cluster autoscaler capability for this worker group | boolean | false
+  desired_capacity    | Desired worker capacity in the autoscaling group. | string | 1
+  ebs_optimized       | Sets whether to use ebs optimization on supported types. | string | true
+  enable_monitoring   | Enables/disables detailed monitoring. | boolean | true
+  image_id            | AMI ID for the eks workers. If not specified search for latest version of Amazon EKS optimized AMI | string | var.worker_ami if specified
+  instance_type       | Size of the worker instance(s). | string | t2.2xlarge
+  key_name            | The key name that should be used for the instances in the autoscaling group. | string | -
+  kubelet_extra_args  | This string is passed directly to kubelet if set. Useful for adding labels or taints. | string | -
+  max_size            | Maximum worker capacity in the autoscaling group. | string | 3
+  min_size            | Minimum worker capacity in the autoscaling group. | string | 1
+  name                | Name of the worker group. Literal count.index will never be used but if name is not set, the count.index interpolation will be used. | string | -
+  public_ip           | Associate a public ip address with a worker | boolean | false
+  protect_from_scale_in | Prevent AWS from scaling in, so that cluster-autoscaler is solely responsible. | boolean | false
+  root_volume_size    | root volume size of workers instances. | string | 100
+  root_volume_type    | root volume type of workers instances, can be 'standard', 'gp2', or 'io1' | string | gp2
+  root_iops           | The amount of provisioned IOPS. This must be set with a volume_type of "io1" | string | 0
+  subnets             | A comma delimited string of subnets to place the worker nodes in. i.e. subnet-123,subnet-456,subnet-789 | list | var.worker_subnet_id
+
 
 ### Ouputs
 - - - -
