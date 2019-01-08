@@ -1,0 +1,6 @@
+@Library('shared-library@master') _
+
+// call our shared library pipeline
+tfModuleCI {
+  major = "1"
+}

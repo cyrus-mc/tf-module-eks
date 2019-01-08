@@ -1,0 +1,8 @@
+Dockerfile
+.dockerignore
+.git
+.gitignore
+**/.terraform
+
+# ignore our runner shell script
+/run-test.sh
