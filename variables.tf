@@ -168,8 +168,6 @@ locals {
 variable "cluster_name"    {}
 variable "cluster_version" {}
 
-variable "cluster_role_arn" {}
-
 variable "cluster_create_timeout" { default = "15m" }
 variable "cluster_update_timeout" { default = "60m" }
 variable "cluster_delete_timeout" { default = "15m" }
@@ -182,8 +180,6 @@ variable "cluster_security_group_rule" {
 
 /* configure worker nodes */
 variable "worker_ami"              { default = "" }
-variable "worker_role_arn"         {}
-variable "worker_instance_profile" {}
 
 variable "worker_subnet_id"           { type = "list" }
 variable "worker_security_group_rule" {

@@ -29,11 +29,8 @@ This module takes the following inputs:
   cluster_delete_timeout | Timeout value when deleting the EKS cluster. | string | 15m
   cluster_update_timeout | Timeout value when updating the EKS cluster. | string | 60m
   cluster_subnet_id | A list of subnets to place the EKS cluster within. | list | -
-  cluster_role_arn | IAM role ARN to use for the EKS cluster control plane. | string | -
   cluster_security_group_rule | Additional security group rule(s) to add to EKS cluster control place security group. | list | []
   worker_ami | Default worker AMI. If not set use Amazon Linux EKS AMI. | string | ""
-  worker_role_arn | IAM role ARN to use for the EKS worker nodes. | string | -
-  worker_instance_profile | IAM instance profile to use for EKS worker nodes. | string | -
   worker_subnet_id | A list of subnets to place the EKS worker nodes within. | list | -
   worker_security_group_rule | Additional security group rule(s) to add to the EKS worker node security group. | list | []
   worker_count | Number of worker autoScaling groups to create. | string | 1

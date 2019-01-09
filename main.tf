@@ -120,6 +120,83 @@ resource aws_security_group_rule "cluster_supplied" {
   type        = "ingress"
 }
 
+/* create cluster IAM role */
+data aws_iam_policy_document "cluster_assume_role_policy" {
+  statement {
+    sid = "EKSClusterAssumeRole"
+
+    actions = [
+      "sts:AssumeRole",
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["eks.amazonaws.com"]
+    }
+  }
+}
+
+resource aws_iam_role "cluster" {
+  name = "${format("eks-cluster-%s", var.cluster_name)}"
+
+  assume_role_policy    = "${data.aws_iam_policy_document.cluster_assume_role_policy.json}"
+  force_detach_policies = true
+}
+
+resource aws_iam_role_policy_attachment "cluster_AmazonEKSClusterPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = "${aws_iam_role.cluster.name}"
+}
+
+resource aws_iam_role_policy_attachment "cluster_AmazonEKSServicePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  role       = "${aws_iam_role.cluster.name}"
+}
+
+/* create worker IAM role */
+data aws_iam_policy_document "worker_assume_role_policy" {
+  statement {
+    sid = "EKSWorkerAssumeRole"
+
+    actions = [
+      "sts:AssumeRole",
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource aws_iam_role "worker" {
+   name = "${format("eks-worker-%s", var.cluster_name)}"
+
+   assume_role_policy    = "${data.aws_iam_policy_document.worker_assume_role_policy.json}"
+   force_detach_policies = true
+}
+
+resource aws_iam_role_policy_attachment "worker_AmazonEKSWorkerNodePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = "${aws_iam_role.worker.name}"
+}
+
+resource aws_iam_role_policy_attachment "worker_AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = "${aws_iam_role.worker.name}"
+}
+
+resource aws_iam_role_policy_attachment "worker_AmazonEC2ContainerRegistryReadOnly" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = "${aws_iam_role.worker.name}"
+}
+
+resource aws_iam_instance_profile "worker" {
+  name = "${format("eks-worker-%s", var.cluster_name)}"
+
+  role = "${aws_iam_role.worker.name}"
+}
+
 resource aws_eks_cluster "main" {
   /* name of the cluster */
   name = "${var.cluster_name}"
@@ -127,7 +204,8 @@ resource aws_eks_cluster "main" {
   /* desired Kubernetes master version */
   version = "${replace(var.cluster_version, "/.\\d+$/", "")}"
 
-  role_arn = "${var.cluster_role_arn}"
+  //role_arn = "${var.cluster_role_arn}"
+  role_arn = "${aws_iam_role.cluster.arn}"
 
   timeouts {
     create = "${var.cluster_create_timeout}"
@@ -140,6 +218,12 @@ resource aws_eks_cluster "main" {
     security_group_ids = [ "${aws_security_group.cluster.id}" ]
     subnet_ids         = [ "${var.cluster_subnet_id}" ]
   }
+
+  /* set implicit dependency */
+  depends_on = [
+    "aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy",
+    "aws_iam_role_policy_attachment.cluster_AmazonEKSServicePolicy",
+  ]
 }
 
 /* create worker autoscaling groups */
@@ -182,7 +266,7 @@ resource aws_launch_configuration "worker" {
   security_groups = [ "${aws_security_group.worker.id}" ]
 
 
-  iam_instance_profile = "${var.worker_instance_profile}"
+  iam_instance_profile = "${aws_iam_instance_profile.worker.id}"
   image_id = "${lookup(var.worker_group[count.index], "image_id",
                                                       local.worker_group_defaults["image_id"])}"
   instance_type        = "${lookup(var.worker_group[count.index], "instance_type",
@@ -261,7 +345,7 @@ data template_file "worker_aws_auth" {
   template = "${file("${path.module}/templates/config-map-aws-auth.yaml.tpl")}"
 
   vars {
-    worker_role_arn = "${var.worker_role_arn}"
+    worker_role_arn = "${aws_iam_role.worker.arn}"
   }
 }
 
