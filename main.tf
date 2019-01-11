@@ -191,6 +191,13 @@ resource aws_iam_role_policy_attachment "worker_AmazonEC2ContainerRegistryReadOn
   role       = "${aws_iam_role.worker.name}"
 }
 
+resource aws_iam_role_policy_attachment "worker_existing" {
+  count = "${length(var.worker_additional_policy)}"
+
+  policy_arn = "${format("arn:aws:iam::aws:policy/%s", element(var.worker_additional_policy, count.index))}"
+  role       = "${aws_iam_role.worker.name}"
+}
+
 resource aws_iam_instance_profile "worker" {
   name = "${format("eks-worker-%s", var.cluster_name)}"
 

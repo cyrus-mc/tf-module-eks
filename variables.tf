@@ -181,6 +181,8 @@ variable "cluster_security_group_rule" {
 /* configure worker nodes */
 variable "worker_ami"              { default = "" }
 
+variable "worker_additional_policy" { default = [] }
+
 variable "worker_subnet_id"           { type = "list" }
 variable "worker_security_group_rule" {
   type    = "list"
