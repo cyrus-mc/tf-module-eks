@@ -352,6 +352,20 @@ data template_file "worker_aws_auth" {
 
   vars {
     worker_role_arn = "${aws_iam_role.worker.arn}"
+    map_roles       = "${join("", data.template_file.role_aws_auth.*.rendered)}"
+  }
+}
+
+/* map roles */
+data template_file "role_aws_auth" {
+  count = "${length(var.auth_map_role)}"
+
+  template = "${file("${path.module}/templates/config-map-aws-auth-map_roles.yaml.tpl")}"
+
+  vars {
+    role_arn = "${lookup(var.auth_map_role[count.index], "role_arn")}"
+    username = "${lookup(var.auth_map_role[count.index], "username")}"
+    group    = "${lookup(var.auth_map_role[count.index], "group")}"
   }
 }
 

@@ -201,6 +201,8 @@ variable "worker_group_defaults" {
 }
 
 /* configure kubectl & aws-authenticator */
+variable "auth_map_role" { default = [] }
+
 variable "kubeconfig_name"                       { default = "" }
 variable "kubeconfig_aws_authenticator_env_vars" { default = {} }
 
