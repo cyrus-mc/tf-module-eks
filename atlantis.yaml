@@ -1,0 +1,17 @@
+version: 2
+projects:
+- name: test
+  dir: test
+  workflow: terraform
+  autoplan:
+    when_modified: [ "../*.tf", "*.tf" ]
+  apply_requirements: [ approved, mergeable ]
+workflows:
+  terraform:
+    plan:
+      steps:
+        - init
+        - plan
+    apply:
+      steps:
+        - run: echo you do not run apply for modules
