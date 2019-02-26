@@ -105,7 +105,7 @@ resource aws_security_group_rule "cluster_worker_ingress" {
   protocol                 = "TCP"
   from_port                = 443
   to_port                  = 443
-  type      = "ingress"
+  type                     = "ingress"
 }
 
 resource aws_security_group_rule "cluster_supplied" {
@@ -391,12 +391,13 @@ EOF
 }
 
 data template_file "kubeconfig" {
-  template = "${file("${path.module}/templates/kubeconfig.tpl")}"
+  //template = "${file("${path.module}/templates/kubeconfig.tpl")}"
+  template = "${file("${path.module}/templates/${local.kubeconfig_template}")}"
 
   vars {
     cluster_name                     = "${aws_eks_cluster.main.name}"
     kubeconfig_name                  = "${local.kubeconfig_name}"
-    endpoint                         = "${aws_eks_cluster.main.endpoint}"
+    endpoint                         = "${var.enable_proxy ? join("", aws_instance.proxy.*.private_ip) : aws_eks_cluster.main.endpoint}"
     cluster_auth_base64              = "${aws_eks_cluster.main.certificate_authority.0.data}"
     aws_authenticator_env_variables  = "${length(var.kubeconfig_aws_authenticator_env_vars) > 0 ? "      env:\n${join("\n", data.template_file.aws_authenticator_env_vars.*.rendered)}" : ""}"
   }

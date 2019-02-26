@@ -5,8 +5,12 @@ locals {
   asg_tags = [ "${null_resource.tags_as_list_of_maps.*.triggers}" ]
 
   kubeconfig_name = "${var.kubeconfig_name == "" ? "eks_${var.cluster_name}" : var.kubeconfig_name}"
+  kubeconfig_template = "${var.enable_proxy ? format("%s", "kubeconfig_proxy.tpl") : format("%s", "kubeconfig.tpl")}"
 
   worker_ami = "${coalesce(join("", data.aws_ami.eks_worker.*.id), var.worker_ami)}"
+
+  proxy_key_name  = "${var.proxy_key_name == "" ? lookup(var.worker_group_defaults, "key_name") : var.proxy_key_name}"
+  proxy_subnet_id = "${var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id}"
 
   ebs_optimized = {
     "c1.medium"    = false
@@ -205,5 +209,14 @@ variable "auth_map_role" { default = [] }
 
 variable "kubeconfig_name"                       { default = "" }
 variable "kubeconfig_aws_authenticator_env_vars" { default = {} }
+
+/* configure use of proxy to protect API endpoint */
+variable "enable_proxy" { default = false }
+
+variable "proxy_instance_type" { default = "t2.micro" }
+variable "proxy_ami"           { default = "ami-032509850cf9ee54e" }
+
+variable "proxy_key_name"      { default = "" }
+variable "proxy_subnet_id"     { default = "" }
 
 variable "tags" { default = {} }
