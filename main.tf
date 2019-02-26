@@ -50,7 +50,7 @@ resource aws_security_group_rule "worker_cluster" {
   security_group_id = "${aws_security_group.worker.id}"
 
   source_security_group_id = "${aws_security_group.cluster.id}"
-  protocol                 = "tcp"
+  protocol                 = "all"
   from_port                = 0
   to_port                  = 65535
   type                     = "ingress"
