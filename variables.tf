@@ -156,6 +156,7 @@ locals {
     root_volume_type      = "gp2"
     root_iops             = "0"
     subnets               = "${join(",", var.worker_subnet_id)}" # A comma delimited string of subnets to place the worker nodes in.
+    system_profile        = ""
   }
   worker_group_defaults = "${merge(local.worker_group_defaults_defaults, var.worker_group_defaults)}"
 

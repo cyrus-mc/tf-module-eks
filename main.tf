@@ -253,6 +253,8 @@ data template_file "worker_userdata" {
     cluster_name        = "${aws_eks_cluster.main.name}"
     endpoint            = "${aws_eks_cluster.main.endpoint}"
     cluster_auth_base64 = "${aws_eks_cluster.main.certificate_authority.0.data}"
+    system_profile      = "${lookup(var.worker_group[count.index], "system_profile",
+                                                                   local.worker_group_defaults["system_profile"])}"
     kubelet_extra_args  = "${lookup(var.worker_group[count.index], "kubelet_extra_args",
                                                                    local.worker_group_defaults["kubelet_extra_args"])}"
   }
