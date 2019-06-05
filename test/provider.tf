@@ -1,14 +1,15 @@
-provider aws {
+provider "aws" {
   profile = "dev"
   region  = "us-west-2"
 }
 
-provider local {}
+provider "local" {}
 
 data "template_file" "stub" {
   template = ""
 
-  vars {}
+  vars = {}
 }
 
-resource null_resource "stub" {}
+resource "null_resource" "stub" {}
+

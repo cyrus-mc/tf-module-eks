@@ -1,4 +1,4 @@
-FROM datinc/terraform:0.11.7-1 AS init
+FROM datinc/terraform:0.12.0-0 AS init
 
 # copy in provider.tf to initialize and cache required providers
 WORKDIR /src/test

@@ -11,10 +11,11 @@ Official AWS documentation: https://docs.aws.amazon.com/eks/latest/userguide/get
 
 This module requires:
 
-   -  [AWS Provider](https://github.com/terraform-providers/terraform-provider-aws) `>= 1.17.0`
-   -  [Template Provider](https://github.com/terraform-providers/terraform-provider-template) `>= 1.0.0`
-   -  [Null Resource Provider](https://github.com/terraform-providers/terraform-provider-null) `>= 1.0.0`
-   -  [Local Provider](https://github.com/terraform-providers/terraform-provider-local) `>= 1.1.0`
+   -  [Terraform](https://github.com/hashicorp/terraform) `>= 0.12`
+   -  [AWS Provider](https://github.com/terraform-providers/terraform-provider-aws) `>= 2.10.0.0`
+   -  [Template Provider](https://github.com/terraform-providers/terraform-provider-template) `>= 2.1.0`
+   -  [Null Resource Provider](https://github.com/terraform-providers/terraform-provider-null) `>= 2.1.0`
+   -  [Local Provider](https://github.com/terraform-providers/terraform-provider-local) `>= 1.2.0`
 
 ### Inputs
 - - - -
@@ -95,7 +96,7 @@ module "eks" {
       protocol    = "tcp"
       to_port     = 443
       from_port   = 443
-      cidr_blocks = "0.0.0.0/0"
+      cidr_blocks = [ "0.0.0.0/0" ]
     }
   ]
 
@@ -112,7 +113,7 @@ module "eks" {
       protocol    = "tcp"
       to_port     = 22
       from_port   = 22
-      cidr_blocks = "0.0.0.0/0"
+      cidr_blocks = [ "0.0.0.0/0" ]
     }
   ]
 

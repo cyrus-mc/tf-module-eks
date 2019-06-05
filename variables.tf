@@ -2,15 +2,15 @@
 #         Local Variable definitions          #
 ###############################################
 locals {
-  asg_tags = [ "${null_resource.tags_as_list_of_maps.*.triggers}" ]
+  asg_tags = null_resource.tags_as_list_of_maps.*.triggers
 
-  kubeconfig_name = "${var.kubeconfig_name == "" ? "eks_${var.cluster_name}" : var.kubeconfig_name}"
-  kubeconfig_template = "${var.enable_proxy ? format("%s", "kubeconfig_proxy.tpl") : format("%s", "kubeconfig.tpl")}"
+  kubeconfig_name     = var.kubeconfig_name == "" ? "eks_${var.cluster_name}" : var.kubeconfig_name
+  kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tpl") : format("%s", "kubeconfig.tpl")
 
-  worker_ami = "${coalesce(join("", data.aws_ami.eks_worker.*.id), var.worker_ami)}"
+  worker_ami = coalesce(join("", data.aws_ami.eks_worker.*.id), var.worker_ami)
 
-  proxy_key_name  = "${var.proxy_key_name == "" ? lookup(var.worker_group_defaults, "key_name") : var.proxy_key_name}"
-  proxy_subnet_id = "${var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id}"
+  proxy_key_name  = var.proxy_key_name == "" ? var.worker_group_defaults[ "key_name" ] : var.proxy_key_name
+  proxy_subnet_id = var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id
 
   ebs_optimized = {
     "c1.medium"    = false
@@ -143,10 +143,10 @@ locals {
     desired_capacity      = "1"
     ebs_optimized         = true
     enable_monitoring     = true
-    image_id              = "${local.worker_ami}"                # AMI ID for the eks workers.  If none is provided, use latest version of their EKS optimized AMI.
-    instance_type         = "t2.2xlarge"                         # Size of the workers instances.
+    image_id              = local.worker_ami # AMI ID for the eks workers.  If none is provided, use latest version of their EKS optimized AMI.
+    instance_type         = "t2.2xlarge"     # Size of the workers instances.
     key_name              = ""
-    kubelet_extra_args    = ""                                   # This string is passed directly to kubelet if set. Useful for adding labels or taints.
+    kubelet_extra_args    = "" # This string is passed directly to kubelet if set. Useful for adding labels or taints.
     max_size              = "3"
     min_size              = "1"
     name                  = "count.index"
@@ -155,19 +155,19 @@ locals {
     root_volume_size      = "100"
     root_volume_type      = "gp2"
     root_iops             = "0"
-    subnets               = "${join(",", var.worker_subnet_id)}" # A comma delimited string of subnets to place the worker nodes in.
+    subnets               = join(",", var.worker_subnet_id) # A comma delimited string of subnets to place the worker nodes in.
     system_profile        = ""
   }
-  worker_group_defaults = "${merge(local.worker_group_defaults_defaults, var.worker_group_defaults)}"
+
+  worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
 
   /*
     Default tags (loacl so you can't over-ride)
   */
   tags = {
-    builtWith         = "terraform"
+    builtWith = "terraform"
   }
 }
-
 
 /* configure cluster (control plane) */
 variable "cluster_name"    {}
@@ -177,33 +177,31 @@ variable "cluster_create_timeout" { default = "15m" }
 variable "cluster_update_timeout" { default = "60m" }
 variable "cluster_delete_timeout" { default = "15m" }
 
-variable "cluster_subnet_id"           { type = "list" }
+variable "cluster_subnet_id"           { type = list(string) }
 variable "cluster_security_group_rule" {
-  type    = "list"
+  type    = list
   default = []
 }
 
 /* configure worker nodes */
-variable "worker_ami"              { default = "" }
+variable "worker_ami" { default = "" }
 
 variable "worker_additional_policy" { default = [] }
 
-variable "worker_subnet_id"           { type = "list" }
+variable "worker_subnet_id"           { type = list(string) }
 variable "worker_security_group_rule" {
-  type    = "list"
+  type    = list
   default = []
 }
 
 variable "worker_count" { default = 1 }
 variable "worker_group" {
-  type = "list"
+  type = list
 
   default = [ { "name" = "default" } ]
 }
 
-variable "worker_group_defaults" {
-  default {}
-}
+variable "worker_group_defaults" { default = {} }
 
 /* configure kubectl & aws-authenticator */
 variable "auth_map_role" { default = [] }
@@ -217,7 +215,7 @@ variable "enable_proxy" { default = false }
 variable "proxy_instance_type" { default = "t2.micro" }
 variable "proxy_ami"           { default = "ami-032509850cf9ee54e" }
 
-variable "proxy_key_name"      { default = "" }
-variable "proxy_subnet_id"     { default = "" }
+variable "proxy_key_name"  { default = "" }
+variable "proxy_subnet_id" { default = "" }
 
 variable "tags" { default = {} }
