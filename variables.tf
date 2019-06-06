@@ -9,6 +9,8 @@ locals {
 
   worker_ami = coalesce(join("", data.aws_ami.eks_worker.*.id), var.worker_ami)
 
+  enable_kiam = var.enable_kiam ? 1 : 0
+
   proxy_key_name  = var.proxy_key_name == "" ? var.worker_group_defaults[ "key_name" ] : var.proxy_key_name
   proxy_subnet_id = var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id
 
@@ -208,6 +210,9 @@ variable "auth_map_role" { default = [] }
 
 variable "kubeconfig_name"                       { default = "" }
 variable "kubeconfig_aws_authenticator_env_vars" { default = {} }
+
+/* configure optional addons */
+variable "enable_kiam" { default = false }
 
 /* configure use of proxy to protect API endpoint */
 variable "enable_proxy" { default = false }

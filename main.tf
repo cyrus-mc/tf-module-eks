@@ -205,89 +205,47 @@ resource "aws_iam_instance_profile" "worker" {
 }
 
 /* support for kiam */
-data "aws_iam_policy_document" "kiam_assume_role_policy" {
-  statement {
-    sid = "EKSKiamEC2AssumeRole"
-
-    actions = [
-      "sts:AssumeRole"
-    ]
-
-    principals {
-      type        = "Service"
-      identifiers = [ "ec2.amazonaws.com" ]
-    }
-  }
-
-  statement {
-    sid = "EKSKiamAssumeRole"
-
-    actions = [
-      "sts:AssumeRole"
-    ]
-
-    principals {
-      type        = "AWS"
-      identifiers = [ aws_iam_role.worker.arn ]
-    }
-  }
-}
-
 resource "aws_iam_role" "kiam" {
+  count = local.enable_kiam
+
   name = format("eks-kiam-%s", var.cluster_name)
 
-  assume_role_policy    = data.aws_iam_policy_document.kiam_assume_role_policy.json
+  assume_role_policy    = templatefile("${path.module}/templates/kiam/assume_role_policy.tmpl",
+                                       { role = aws_iam_role.worker.arn })
   force_detach_policies = true
 }
 
 resource "aws_iam_policy" "kiam_worker" {
+  count = local.enable_kiam
+
   name = format("eks-kiam-worker-%s", var.cluster_name)
 
   path = "/"
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "sts:AssumeRole"
-            ],
-            "Resource": "${aws_iam_role.kiam.arn}"
-        }
-    ]
-}
-EOF
+  policy = templatefile("${path.module}/templates/kiam/worker_policy.tmpl",
+                        { role = aws_iam_role.kiam[0].arn })
 }
 
 resource "aws_iam_role_policy_attachment" "kiam_worker" {
-  policy_arn = aws_iam_policy.kiam_worker.arn
+  count = local.enable_kiam
+
+  policy_arn = aws_iam_policy.kiam_worker[0].arn
   role       = aws_iam_role.worker.name
 }
 
 resource "aws_iam_policy" "kiam" {
+  count = local.enable_kiam
+
   name = format("eks-kiam-%s", var.cluster_name)
 
   path = "/"
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "sts:AssumeRole"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
+  policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
 }
 
 resource "aws_iam_role_policy_attachment" "kiam" {
-  policy_arn = aws_iam_policy.kiam.arn
-  role       = aws_iam_role.kiam.name
+  count = local.enable_kiam
+
+  policy_arn = aws_iam_policy.kiam[0].arn
+  role       = aws_iam_role.kiam[0].name
 }
 
 resource "aws_eks_cluster" "main" {
