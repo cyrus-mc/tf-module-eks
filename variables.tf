@@ -12,7 +12,7 @@ locals {
   enable_kiam = var.enable_kiam ? 1 : 0
   enable_flux = var.enable_flux ? 1 : 0
 
-  proxy_key_name  = var.proxy_key_name == "" ? var.worker_group_defaults[ "key_name" ] : var.proxy_key_name
+  proxy_key_name  = var.proxy_key_name == "" ? lookup(var.worker_group_defaults, "key_name", "") : var.proxy_key_name
   proxy_subnet_id = var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id
 
   ebs_optimized = {
