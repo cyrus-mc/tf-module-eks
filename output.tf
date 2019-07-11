@@ -6,5 +6,17 @@ output "cluster_certificate_authority_data" { value = aws_eks_cluster.this.certi
 # Though documented, not yet supported
 # output "cluster_arn" { value = "${aws_eks_cluster.main.arn}" }
 
-output "kubeconfig" { value = data.template_file.kubeconfig.rendered }
-output "kubeconfig_json" { value = data.template_file.kubeconfig_json.rendered }
+output "kubeconfig" {
+  value = data.template_file.kubeconfig.rendered
+
+  depends_on = [
+    null_resource.apply_flux_deployment
+  ]
+}
+output "kubeconfig_json" {
+  value = data.template_file.kubeconfig_json.rendered
+
+  depends_on = [
+    null_resource.apply_flux_deployment
+  ]
+}
