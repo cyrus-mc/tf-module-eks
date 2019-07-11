@@ -5,14 +5,14 @@ data "template_file" "proxy_user_data" {
   template = file("${path.module}/templates/user_data/proxy.tpl")
 
   vars = {
-    EKS_ENDPOINT = replace(aws_eks_cluster.main.endpoint, "/^https\\:\\/\\//", "")
+    EKS_ENDPOINT = replace(aws_eks_cluster.this.endpoint, "/^https\\:\\/\\//", "")
   }
 }
 
 resource "aws_security_group" "proxy" {
   count = (var.enable_proxy ? 1 : 0)
 
-  name_prefix = format("eks_proxy_%s-", aws_eks_cluster.main.name)
+  name_prefix = format("eks_proxy_%s-", aws_eks_cluster.this.name)
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
@@ -20,7 +20,7 @@ resource "aws_security_group" "proxy" {
     create_before_destroy = true
   }
 
-  tags = merge(var.tags, { "Name" = format("eks_proxy_%s", aws_eks_cluster.main.name) })
+  tags = merge(var.tags, { "Name" = format("eks_proxy_%s", aws_eks_cluster.this.name) })
 }
 
 resource "aws_security_group_rule" "proxy_ingress_https" {

@@ -1,5 +1,7 @@
+data "aws_caller_identity" "current" {}
+
 /* query AmazonEKS AMI for specific EKS version */
-data "aws_ami" "eks_worker" {
+data "aws_ami" "worker" {
   /* only query if we didn't supply our own AMI */
   count = var.worker_ami == "" ? 1 : 0
 
@@ -18,12 +20,12 @@ data "aws_subnet" "selected" {
 
 /* create worker security group */
 resource "aws_security_group" "worker" {
-  name_prefix = format("eks_worker-%s-", var.cluster_name)
+  name_prefix = format("%s.worker-", var.cluster_name)
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
-  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", aws_eks_cluster.main.name) = "owned"
-                           "Name" = format("eks_worker_%s", aws_eks_cluster.main.name) })
+  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
+                           "Name" = format("%s.worker", var.cluster_name) })
 }
 
 resource "aws_security_group_rule" "worker_egress" {
@@ -80,12 +82,12 @@ resource "aws_security_group_rule" "worker_supplied" {
 
 /* create control plane security group */
 resource "aws_security_group" "cluster" {
-  name_prefix = format("eks_master-%s-", var.cluster_name)
+  name_prefix = format("%s.control-", var.cluster_name)
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
   tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("eks_cluster_%s", var.cluster_name) })
+                           "Name" = format("%s.control", var.cluster_name) })
 }
 
 resource "aws_security_group_rule" "cluster_egress" {
@@ -137,7 +139,7 @@ data "aws_iam_policy_document" "cluster_assume_role_policy" {
 }
 
 resource "aws_iam_role" "cluster" {
-  name = format("eks-cluster-%s", var.cluster_name)
+  name = format("%s.control", var.cluster_name)
 
   assume_role_policy    = data.aws_iam_policy_document.cluster_assume_role_policy.json
   force_detach_policies = true
@@ -170,7 +172,7 @@ data "aws_iam_policy_document" "worker_assume_role_policy" {
 }
 
 resource "aws_iam_role" "worker" {
-  name = format("eks-worker-%s", var.cluster_name)
+  name = format("%s.worker", var.cluster_name)
 
   assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy.json
   force_detach_policies = true
@@ -199,7 +201,7 @@ resource "aws_iam_role_policy_attachment" "worker_existing" {
 }
 
 resource "aws_iam_instance_profile" "worker" {
-  name = format("eks-worker-%s", var.cluster_name)
+  name = format("%s.worker", var.cluster_name)
 
   role = aws_iam_role.worker.name
 }
@@ -208,7 +210,7 @@ resource "aws_iam_instance_profile" "worker" {
 resource "aws_iam_role" "kiam" {
   count = local.enable_kiam
 
-  name = format("eks-kiam-%s", var.cluster_name)
+  name = format("%s.kiam", var.cluster_name)
 
   assume_role_policy    = templatefile("${path.module}/templates/kiam/assume_role_policy.tmpl",
                                        { role = aws_iam_role.worker.arn })
@@ -218,7 +220,7 @@ resource "aws_iam_role" "kiam" {
 resource "aws_iam_policy" "kiam_worker" {
   count = local.enable_kiam
 
-  name = format("eks-kiam-worker-%s", var.cluster_name)
+  name = format("%s.kiam-worker", var.cluster_name)
 
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/worker_policy.tmpl",
@@ -235,7 +237,7 @@ resource "aws_iam_role_policy_attachment" "kiam_worker" {
 resource "aws_iam_policy" "kiam" {
   count = local.enable_kiam
 
-  name = format("eks-kiam-%s", var.cluster_name)
+  name = format("%s.kiam", var.cluster_name)
 
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
@@ -248,9 +250,9 @@ resource "aws_iam_role_policy_attachment" "kiam" {
   role       = aws_iam_role.kiam[0].name
 }
 
-resource "aws_eks_cluster" "main" {
+resource "aws_eks_cluster" "this" {
   /* name of the cluster */
-  name = var.cluster_name
+  name = replace(var.cluster_name, ".", "-")
 
   /* desired Kubernetes master version */
   version = var.cluster_version
@@ -268,6 +270,13 @@ resource "aws_eks_cluster" "main" {
   vpc_config {
     security_group_ids = [ aws_security_group.cluster.id ]
     subnet_ids         = var.cluster_subnet_id
+  }
+
+  lifecycle {
+    /* ignore cluster version as upgrades will be done out of band */
+    ignore_changes = [
+      version
+    ]
   }
 
   /* set implicit dependency */
@@ -294,9 +303,9 @@ data "template_file" "worker_userdata" {
   template = file("${path.module}/templates/userdata.sh.tpl")
 
   vars = {
-    cluster_name        = aws_eks_cluster.main.name
-    endpoint            = aws_eks_cluster.main.endpoint
-    cluster_auth_base64 = aws_eks_cluster.main.certificate_authority[0].data
+    cluster_name        = aws_eks_cluster.this.name
+    endpoint            = aws_eks_cluster.this.endpoint
+    cluster_auth_base64 = aws_eks_cluster.this.certificate_authority[0].data
     system_profile      = lookup(var.worker_group[ count.index ], "system_profile",
                                                                   local.worker_group_defaults[ "system_profile" ])
     kubelet_extra_args  = lookup(var.worker_group[ count.index ], "kubelet_extra_args",
@@ -307,8 +316,8 @@ data "template_file" "worker_userdata" {
 resource "aws_launch_configuration" "worker" {
   count = var.worker_count
 
-  name_prefix = format("eks-%s-%s-", aws_eks_cluster.main.name,
-                                     lookup(var.worker_group[ count.index ], "name", count.index))
+  name_prefix = format("%s-%s-", var.cluster_name,
+                                 lookup(var.worker_group[ count.index ], "name", count.index))
 
   enable_monitoring = lookup(var.worker_group[ count.index ], "enable_monitoring",
                                                               local.worker_group_defaults[ "enable_monitoring" ])
@@ -354,8 +363,8 @@ resource "aws_launch_configuration" "worker" {
 resource "aws_autoscaling_group" "worker" {
   count = var.worker_count
 
-  name_prefix = format("eks-%s-%s-", aws_eks_cluster.main.name,
-                                     lookup(var.worker_group[ count.index ], "name", count.index))
+  name_prefix = format("%s-%s-", var.cluster_name,
+                                 lookup(var.worker_group[ count.index ], "name", count.index))
 
   launch_configuration = element(aws_launch_configuration.worker.*.id, count.index)
 
@@ -378,10 +387,10 @@ resource "aws_autoscaling_group" "worker" {
   }
 
   tags = [ { "key"                 = "Name"
-             "value"               = format("eks-%s-%s", aws_eks_cluster.main.name,
+             "value"               = format("%s-%s", aws_eks_cluster.this.name,
                                                              lookup(var.worker_group[ count.index ], "name", count.index))
              "propagate_at_launch" = true },
-           { "key"                 = "kubernetes.io/cluster/${aws_eks_cluster.main.name}"
+           { "key"                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
              "value"               = "owned"
              "propagate_at_launch" = true },
            { "key" = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[ count.index ], "autoscaling_enabled",
@@ -394,11 +403,11 @@ resource "aws_autoscaling_group" "worker" {
 
 /* configure worker authentication */
 data "template_file" "worker_aws_auth" {
-  template = file("${path.module}/templates/config-map-aws-auth.yaml.tpl")
+  template = file("${path.module}/templates/config-map-aws-auth.json.tmpl")
 
   vars = {
     worker_role_arn = aws_iam_role.worker.arn
-    map_roles       = join("", data.template_file.role_aws_auth.*.rendered)
+    map_roles       = join(",", data.template_file.role_aws_auth.*.rendered)
   }
 }
 
@@ -406,18 +415,14 @@ data "template_file" "worker_aws_auth" {
 data "template_file" "role_aws_auth" {
   count = length(var.auth_map_role)
 
-  template = file("${path.module}/templates/config-map-aws-auth-map_roles.yaml.tpl")
+  template = file("${path.module}/templates/config-map-aws-auth-map_roles.json.tmpl")
 
   vars = {
-    role_arn = var.auth_map_role[ count.index ][ "role_arn" ]
+    role     = var.auth_map_role[ count.index ][ "role" ]
     username = var.auth_map_role[ count.index ][ "username" ]
     group    = var.auth_map_role[ count.index ][ "group" ]
+    account  = data.aws_caller_identity.current.account_id
   }
-}
-
-resource "local_file" "worker_aws_auth" {
-  content  = data.template_file.worker_aws_auth.rendered
-  filename = "./config-map-aws-auth_${var.cluster_name}.yaml"
 }
 
 /* configure kubectl */
@@ -437,26 +442,49 @@ EOF
 }
 
 data "template_file" "kubeconfig" {
-  //template = "${file("${path.module}/templates/kubeconfig.tpl")}"
   template = file("${path.module}/templates/${local.kubeconfig_template}")
 
   vars = {
-    cluster_name                    = aws_eks_cluster.main.name
+    cluster_name                    = aws_eks_cluster.this.name
     kubeconfig_name                 = local.kubeconfig_name
-    endpoint                        = var.enable_proxy ? join("", aws_instance.proxy.*.private_ip) : aws_eks_cluster.main.endpoint
-    cluster_auth_base64             = aws_eks_cluster.main.certificate_authority[0].data
+    endpoint                        = var.enable_proxy ? join("", aws_instance.proxy.*.private_ip) : aws_eks_cluster.this.endpoint
+    cluster_auth_base64             = aws_eks_cluster.this.certificate_authority[0].data
     aws_authenticator_env_variables = length(var.kubeconfig_aws_authenticator_env_vars) > 0 ? "      env:\n${join("\n", data.template_file.aws_authenticator_env_vars.*.rendered)}" : ""
   }
 }
 
-resource "local_file" "kubeconfig" {
-  content = data.template_file.kubeconfig.rendered
-  filename = "./kubeconfig_${var.cluster_name}"
+data "template_file" "aws_authenticator_env_vars_json" {
+  count = length(var.kubeconfig_aws_authenticator_env_vars)
+
+  template = <<EOF
+            {
+              "name": "$${key}",
+              "value": "$${value}"
+            }
+EOF
+
+
+  vars = {
+    key   = element(keys(var.kubeconfig_aws_authenticator_env_vars), count.index)
+    value = element(values(var.kubeconfig_aws_authenticator_env_vars), count.index)
+  }
+}
+
+data "template_file" "kubeconfig_json" {
+  template = file("${path.module}/templates/${local.kubeconfig_template}.json")
+
+  vars = {
+    cluster_name                    = aws_eks_cluster.this.name
+    kubeconfig_name                 = local.kubeconfig_name
+    endpoint                        = var.enable_proxy ? join("", aws_instance.proxy.*.private_ip) : aws_eks_cluster.this.endpoint
+    cluster_auth_base64             = aws_eks_cluster.this.certificate_authority[0].data
+    aws_authenticator_env_variables = join(",", data.template_file.aws_authenticator_env_vars_json.*.rendered)
+  }
 }
 
 resource "null_resource" "update_worker_aws_auth" {
   provisioner "local-exec" {
-    command = "for i in {1..5}; do kubectl apply -f ./config-map-aws-auth_${var.cluster_name}.yaml --kubeconfig ./kubeconfig_${var.cluster_name} && break || sleep 10; done"
+    command = "${path.module}/kubectl_apply.sh '${data.template_file.kubeconfig_json.rendered}' '${data.template_file.worker_aws_auth.rendered}'"
   }
 
   triggers = {
@@ -464,6 +492,35 @@ resource "null_resource" "update_worker_aws_auth" {
   }
 
   /* only run after the cluster is up */
-  depends_on = [ aws_eks_cluster.main ]
+  depends_on = [
+    aws_eks_cluster.this
+  ]
 }
 
+/* install flux */
+data "template_file" "flux_deployment" {
+  count = local.enable_flux
+
+  template = file("${path.module}/templates/flux/deployment.json.tmpl")
+
+  vars = {
+    git_url = var.flux_git_url
+  }
+}
+
+resource "null_resource" "apply_flux_deployment" {
+  count = local.enable_flux
+
+  provisioner "local-exec" {
+    command = "${path.module}/kubectl_apply.sh '${data.template_file.kubeconfig_json.rendered}' '${data.template_file.flux_deployment[0].rendered}'"
+  }
+
+  triggers = {
+    deployment_rendered = data.template_file.flux_deployment[0].rendered
+  }
+
+  /* only run after the cluster is up */
+  depends_on = [
+    aws_eks_cluster.this
+  ]
+}

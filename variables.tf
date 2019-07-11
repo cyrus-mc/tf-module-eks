@@ -4,12 +4,13 @@
 locals {
   asg_tags = null_resource.tags_as_list_of_maps.*.triggers
 
-  kubeconfig_name     = var.kubeconfig_name == "" ? "eks_${var.cluster_name}" : var.kubeconfig_name
-  kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tpl") : format("%s", "kubeconfig.tpl")
+  kubeconfig_name     = var.kubeconfig_name == "" ? "${var.cluster_name}" : var.kubeconfig_name
+  kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tmpl") : format("%s", "kubeconfig.tmpl")
 
-  worker_ami = coalesce(join("", data.aws_ami.eks_worker.*.id), var.worker_ami)
+  worker_ami = coalesce(join("", data.aws_ami.worker.*.id), var.worker_ami)
 
   enable_kiam = var.enable_kiam ? 1 : 0
+  enable_flux = var.enable_flux ? 1 : 0
 
   proxy_key_name  = var.proxy_key_name == "" ? var.worker_group_defaults[ "key_name" ] : var.proxy_key_name
   proxy_subnet_id = var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id
@@ -213,6 +214,9 @@ variable "kubeconfig_aws_authenticator_env_vars" { default = {} }
 
 /* configure optional addons */
 variable "enable_kiam" { default = false }
+variable "enable_flux" { default = false }
+
+variable "flux_git_url" { default = null }
 
 /* configure use of proxy to protect API endpoint */
 variable "enable_proxy" { default = false }

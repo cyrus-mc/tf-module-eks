@@ -10,5 +10,8 @@ module "eks" {
   worker_group_defaults = {
     key_name = "development_operations"
   }
+
+  enable_flux  = true
+  flux_git_url = format("git@bitbucket.org:dat/gitops-dev.git")
 }
 
