@@ -20,3 +20,6 @@ output "kubeconfig_json" {
     null_resource.apply_flux_deployment
   ]
 }
+
+/* kiam outputs */
+output "kiam_server_role_arn" { value = aws_iam_role.kiam[0].arn }

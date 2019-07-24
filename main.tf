@@ -210,11 +210,27 @@ resource "aws_iam_instance_profile" "worker" {
 resource "aws_iam_role" "kiam" {
   count = local.enable_kiam
 
-  name = format("%s.kiam", var.cluster_name)
+  name = format("eks_%s.kiam", var.cluster_name)
 
   assume_role_policy    = templatefile("${path.module}/templates/kiam/assume_role_policy.tmpl",
                                        { role = aws_iam_role.worker.arn })
   force_detach_policies = true
+}
+
+resource "aws_iam_policy" "kiam" {
+  count = local.enable_kiam
+
+  name = format("eks_%s.kiam", var.cluster_name)
+
+  path = "/"
+  policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
+}
+
+resource "aws_iam_role_policy_attachment" "kiam" {
+  count = local.enable_kiam
+
+  policy_arn = aws_iam_policy.kiam[0].arn
+  role       = aws_iam_role.kiam[0].name
 }
 
 resource "aws_iam_policy" "kiam_worker" {
@@ -232,22 +248,6 @@ resource "aws_iam_role_policy_attachment" "kiam_worker" {
 
   policy_arn = aws_iam_policy.kiam_worker[0].arn
   role       = aws_iam_role.worker.name
-}
-
-resource "aws_iam_policy" "kiam" {
-  count = local.enable_kiam
-
-  name = format("eks_%s.kiam", var.cluster_name)
-
-  path = "/"
-  policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
-}
-
-resource "aws_iam_role_policy_attachment" "kiam" {
-  count = local.enable_kiam
-
-  policy_arn = aws_iam_policy.kiam[0].arn
-  role       = aws_iam_role.kiam[0].name
 }
 
 resource "aws_eks_cluster" "this" {
