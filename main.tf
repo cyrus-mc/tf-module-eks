@@ -20,12 +20,12 @@ data "aws_subnet" "selected" {
 
 /* create worker security group */
 resource "aws_security_group" "worker" {
-  name_prefix = format("%s.worker-", var.cluster_name)
+  name_prefix = format("eks_%s.worker-", var.cluster_name)
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
   tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("%s.worker", var.cluster_name) })
+                           "Name" = format("eks_%s.worker", var.cluster_name) })
 }
 
 resource "aws_security_group_rule" "worker_egress" {
@@ -82,12 +82,12 @@ resource "aws_security_group_rule" "worker_supplied" {
 
 /* create control plane security group */
 resource "aws_security_group" "cluster" {
-  name_prefix = format("%s.control-", var.cluster_name)
+  name_prefix = format("eks_%s.control-", var.cluster_name)
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
   tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("%s.control", var.cluster_name) })
+                           "Name" = format("eks_%s.control", var.cluster_name) })
 }
 
 resource "aws_security_group_rule" "cluster_egress" {
@@ -139,7 +139,7 @@ data "aws_iam_policy_document" "cluster_assume_role_policy" {
 }
 
 resource "aws_iam_role" "cluster" {
-  name = format("%s.control", var.cluster_name)
+  name = format("eks_%s.control", var.cluster_name)
 
   assume_role_policy    = data.aws_iam_policy_document.cluster_assume_role_policy.json
   force_detach_policies = true
@@ -172,7 +172,7 @@ data "aws_iam_policy_document" "worker_assume_role_policy" {
 }
 
 resource "aws_iam_role" "worker" {
-  name = format("%s.worker", var.cluster_name)
+  name = format("eks_%s.worker", var.cluster_name)
 
   assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy.json
   force_detach_policies = true
@@ -201,7 +201,7 @@ resource "aws_iam_role_policy_attachment" "worker_existing" {
 }
 
 resource "aws_iam_instance_profile" "worker" {
-  name = format("%s.worker", var.cluster_name)
+  name = format("eks_%s.worker", var.cluster_name)
 
   role = aws_iam_role.worker.name
 }
@@ -220,7 +220,7 @@ resource "aws_iam_role" "kiam" {
 resource "aws_iam_policy" "kiam_worker" {
   count = local.enable_kiam
 
-  name = format("%s.kiam-worker", var.cluster_name)
+  name = format("eks_%s.kiam-worker", var.cluster_name)
 
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/worker_policy.tmpl",
@@ -237,7 +237,7 @@ resource "aws_iam_role_policy_attachment" "kiam_worker" {
 resource "aws_iam_policy" "kiam" {
   count = local.enable_kiam
 
-  name = format("%s.kiam", var.cluster_name)
+  name = format("eks_%s.kiam", var.cluster_name)
 
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
@@ -316,8 +316,8 @@ data "template_file" "worker_userdata" {
 resource "aws_launch_configuration" "worker" {
   count = var.worker_count
 
-  name_prefix = format("%s-%s-", var.cluster_name,
-                                 lookup(var.worker_group[ count.index ], "name", count.index))
+  name_prefix = format("eks_%s-%s-", var.cluster_name,
+                                     lookup(var.worker_group[ count.index ], "name", count.index))
 
   enable_monitoring = lookup(var.worker_group[ count.index ], "enable_monitoring",
                                                               local.worker_group_defaults[ "enable_monitoring" ])
@@ -363,8 +363,8 @@ resource "aws_launch_configuration" "worker" {
 resource "aws_autoscaling_group" "worker" {
   count = var.worker_count
 
-  name_prefix = format("%s-%s-", var.cluster_name,
-                                 lookup(var.worker_group[ count.index ], "name", count.index))
+  name_prefix = format("eks_%s-%s-", var.cluster_name,
+                                     lookup(var.worker_group[ count.index ], "name", count.index))
 
   launch_configuration = element(aws_launch_configuration.worker.*.id, count.index)
 
