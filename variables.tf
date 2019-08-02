@@ -141,6 +141,8 @@ locals {
     "x1e.32xlarge" = true
   }
 
+  worker_count = var.worker_count == null ? length(var.worker_group) : var.worker_count
+
   worker_group_defaults_defaults = {
     autoscaling_enabled   = false
     desired_capacity      = "1"
@@ -197,7 +199,7 @@ variable "worker_security_group_rule" {
   default = []
 }
 
-variable "worker_count" { default = 1 }
+variable "worker_count" { default = null }
 variable "worker_group" {
   type = list
 

@@ -37,7 +37,7 @@ This module takes the following inputs:
   `worker_ami` | Default worker AMI. If not set use Amazon Linux EKS AMI. | string | `""`
   `worker_subnet_id` | A list of subnets to place the EKS worker nodes within. | list | -
   `worker_security_group_rule` | Additional security group rule(s) to add to the EKS worker node security group. | list | `[]`
-  `worker_count` | Number of worker autoScaling groups to create. | string | `1`
+  `worker_count` | Number of worker autoScaling groups to create (only required if `worker_group` contains interpolated values). | string | `null`
   `worker_group` | List of maps defining worker autoScaling group settings. | list | `[ { "name" = "default" } ]`
   `worker_group_defaults` | Defaults for working autoScaling group settings. | map | `{}`
 

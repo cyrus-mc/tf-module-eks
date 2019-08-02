@@ -298,7 +298,7 @@ resource "null_resource" "tags_as_list_of_maps" {
 }
 
 data "template_file" "worker_userdata" {
-  count = var.worker_count
+  count = local.worker_count
 
   template = file("${path.module}/templates/userdata.sh.tpl")
 
@@ -314,7 +314,7 @@ data "template_file" "worker_userdata" {
 }
 
 resource "aws_launch_configuration" "worker" {
-  count = var.worker_count
+  count = local.worker_count
 
   name_prefix = format("EKS_%s-%s-", var.cluster_name,
                                      lookup(var.worker_group[ count.index ], "name", count.index))
@@ -361,7 +361,7 @@ resource "aws_launch_configuration" "worker" {
 }
 
 resource "aws_autoscaling_group" "worker" {
-  count = var.worker_count
+  count = local.worker_count
 
   name_prefix = format("EKS_%s-%s-", var.cluster_name,
                                      lookup(var.worker_group[ count.index ], "name", count.index))
