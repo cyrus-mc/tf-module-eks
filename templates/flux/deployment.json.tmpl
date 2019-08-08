@@ -1,233 +1,244 @@
 {
-	"apiVersion": "apiextensions.k8s.io/v1beta1",
-	"kind": "CustomResourceDefinition",
-	"metadata": {
-		"name": "helmreleases.flux.weave.works"
-	},
-	"spec": {
-		"group": "flux.weave.works",
-		"names": {
-			"kind": "HelmRelease",
-			"listKind": "HelmReleaseList",
-			"plural": "helmreleases",
-			"shortNames": [
-				"hr"
-			]
-		},
-		"scope": "Namespaced",
-		"subresources": {
-			"status": {}
-		},
-		"version": "v1beta1",
-		"versions": [
-			{
-				"name": "v1beta1",
-				"served": true,
-				"storage": true
-			}
-		],
-		"validation": {
-			"openAPIV3Schema": {
-				"properties": {
-					"spec": {
-						"required": [
-							"chart"
-						],
-						"properties": {
-							"releaseName": {
-								"type": "string",
-								"pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
-							},
-							"timeout": {
-								"type": "integer",
-								"format": "int64"
-							},
-							"resetValues": {
-								"type": "boolean"
-							},
-							"forceUpgrade": {
-								"type": "boolean"
-							},
-							"rollback": {
-								"type": "object",
-								"properties": {
-									"enable": {
-										"type": "boolean"
-									},
-									"force": {
-										"type": "boolean"
-									},
-									"recreate": {
-										"type": "boolean"
-									},
-									"disableHooks": {
-										"type": "boolean"
-									},
-									"timeout": {
-										"type": "int64"
-									},
-									"wait": {
-										"type": "boolean"
-									}
-								}
-							},
-							"valueFileSecrets": {
-								"type": "array",
-								"items": {
-									"type": "object",
-									"required": [
-										"name"
-									],
-									"properties": {
-										"name": {
-											"type": "string"
-										}
-									}
-								}
-							},
-							"valuesFrom": {
-								"type": "array",
-								"items": {
-									"type": "object",
-									"properties": {
-										"configMapKeyRef": {
-											"type": "object",
-											"required": [
-												"name"
-											],
-											"properties": {
-												"name": {
-													"type": "string"
-												},
-												"key": {
-													"type": "string"
-												},
-												"optional": {
-													"type": "boolean\nsecretKeyRef:"
-												}
-											}
-										},
-										"externalSourceRef": {
-											"type": "object",
-											"required": [
-												"url"
-											],
-											"properties": {
-												"url": {
-													"type": "string"
-												},
-												"optional": {
-													"type": "boolean"
-												}
-											}
-										},
-										"chartFileRef": {
-											"type": "object",
-											"required": [
-												"path"
-											],
-											"properties": {
-												"path": {
-													"type": "string"
-												},
-												"optional": {
-													"type": "boolean"
-												}
-											}
-										}
-									},
-									"oneOf": [
-										{
-											"required": [
-												"configMapKeyRef"
-											]
-										},
-										{
-											"required": [
-												"secretKeyRef"
-											]
-										},
-										{
-											"required": [
-												"externalSourceRef"
-											]
-										},
-										{
-											"required": [
-												"chartFileRef"
-											]
-										}
-									]
-								}
-							},
-							"values": {
-								"type": "object"
-							},
-							"chart": {
-								"oneOf": [
-									{
-										"required": [
-											"git",
-											"path"
-										],
-										"properties": {
-											"git": {
-												"type": "string",
-												"format": "git"
-											},
-											"path": {
-												"type": "string"
-											},
-											"ref": {
-												"type": "string"
-											},
-											"skipDepUpdate": {
-												"type": "boolean"
-											}
-										}
-									},
-									{
-										"required": [
-											"repository",
-											"name",
-											"version"
-										],
-										"properties": {
-											"repository": {
-												"type": "string",
-												"format": "url"
-											},
-											"name": {
-												"type": "string"
-											},
-											"version": {
-												"type": "string",
-												"format": "semver"
-											},
-											"chartPullSecret": {
-												"properties": {
-													"name": {
-														"type": "string"
-													}
-												}
-											}
-										}
-									}
-								]
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-{
-	"apiVersion": "v1",
-	"kind": "Namespace",
-	"metadata": {
-		"name": "flux"
-	}
+   "apiVersion": "apiextensions.k8s.io/v1beta1",
+   "kind": "CustomResourceDefinition",
+   "metadata": {
+      "name": "helmreleases.flux.weave.works"
+   },
+   "spec": {
+      "group": "flux.weave.works",
+      "names": {
+         "kind": "HelmRelease",
+         "listKind": "HelmReleaseList",
+         "plural": "helmreleases",
+         "shortNames": [
+            "hr"
+         ]
+      },
+      "scope": "Namespaced",
+      "subresources": {
+         "status": {}
+      },
+      "version": "v1beta1",
+      "versions": [
+         {
+            "name": "v1beta1",
+            "served": true,
+            "storage": true
+         }
+      ],
+      "validation": {
+         "openAPIV3Schema": {
+            "properties": {
+               "spec": {
+                  "required": [
+                     "chart"
+                  ],
+                  "properties": {
+                     "releaseName": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                     },
+                     "timeout": {
+                        "type": "integer",
+                        "format": "int64"
+                     },
+                     "resetValues": {
+                        "type": "boolean"
+                     },
+                     "forceUpgrade": {
+                        "type": "boolean"
+                     },
+                     "rollback": {
+                        "type": "object",
+                        "properties": {
+                           "enable": {
+                              "type": "boolean"
+                           },
+                           "force": {
+                              "type": "boolean"
+                           },
+                           "recreate": {
+                              "type": "boolean"
+                           },
+                           "disableHooks": {
+                              "type": "boolean"
+                           },
+                           "timeout": {
+                              "type": "integer",
+                              "format": "int64"
+                           },
+                           "wait": {
+                              "type": "boolean"
+                           }
+                        }
+                     },
+                     "valueFileSecrets": {
+                        "type": "array",
+                        "items": {
+                           "type": "object",
+                           "required": [
+                              "name"
+                           ],
+                           "properties": {
+                              "name": {
+                                 "type": "string"
+                              }
+                           }
+                        }
+                     },
+                     "valuesFrom": {
+                        "type": "array",
+                        "items": {
+                           "type": "object",
+                           "properties": {
+                              "configMapKeyRef": {
+                                 "type": "object",
+                                 "required": [
+                                    "name"
+                                 ],
+                                 "properties": {
+                                    "name": {
+                                       "type": "string"
+                                    },
+                                    "key": {
+                                       "type": "string"
+                                    },
+                                    "optional": {
+                                       "type": "boolean"
+                                    }
+                                 }
+                              },
+                              "secretKeyRef": {
+                                 "type": "object",
+                                 "required": [
+                                    "name"
+                                 ],
+                                 "properties": {
+                                    "name": {
+                                       "type": "string"
+                                    },
+                                    "key": {
+                                       "type": "string"
+                                    },
+                                    "optional": {
+                                       "type": "boolean"
+                                    }
+                                 }
+                              },
+                              "externalSourceRef": {
+                                 "type": "object",
+                                 "required": [
+                                    "url"
+                                 ],
+                                 "properties": {
+                                    "url": {
+                                       "type": "string"
+                                    },
+                                    "optional": {
+                                       "type": "boolean"
+                                    }
+                                 }
+                              },
+                              "chartFileRef": {
+                                 "type": "object",
+                                 "required": [
+                                    "path"
+                                 ],
+                                 "properties": {
+                                    "path": {
+                                       "type": "string"
+                                    },
+                                    "optional": {
+                                       "type": "boolean"
+                                    }
+                                 }
+                              }
+                           },
+                           "oneOf": [
+                              {
+                                 "required": [
+                                    "configMapKeyRef"
+                                 ]
+                              },
+                              {
+                                 "required": [
+                                    "secretKeyRef"
+                                 ]
+                              },
+                              {
+                                 "required": [
+                                    "externalSourceRef"
+                                 ]
+                              },
+                              {
+                                 "required": [
+                                    "chartFileRef"
+                                 ]
+                              }
+                           ]
+                        }
+                     },
+                     "values": {
+                        "type": "object"
+                     },
+                     "chart": {
+                        "oneOf": [
+                           {
+                              "required": [
+                                 "git",
+                                 "path"
+                              ],
+                              "properties": {
+                                 "git": {
+                                    "type": "string",
+                                    "format": "git"
+                                 },
+                                 "path": {
+                                    "type": "string"
+                                 },
+                                 "ref": {
+                                    "type": "string"
+                                 },
+                                 "skipDepUpdate": {
+                                    "type": "boolean"
+                                 }
+                              }
+                           },
+                           {
+                              "required": [
+                                 "repository",
+                                 "name",
+                                 "version"
+                              ],
+                              "properties": {
+                                 "repository": {
+                                    "type": "string",
+                                    "format": "url"
+                                 },
+                                 "name": {
+                                    "type": "string"
+                                 },
+                                 "version": {
+                                    "type": "string",
+                                    "format": "semver"
+                                 },
+                                 "chartPullSecret": {
+                                    "properties": {
+                                       "name": {
+                                          "type": "string"
+                                       }
+                                    }
+                                 }
+                              }
+                           }
+                        ]
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
 }
 {
 	"apiVersion": "v1",
@@ -238,7 +249,7 @@
 			"app.kubernetes.io/instance": "operator"
 		},
 		"name": "flux",
-		"namespace": "flux"
+		"namespace": "default"
 	}
 }
 {
@@ -291,7 +302,7 @@
 	"subjects": [
 		{
 			"name": "flux",
-			"namespace": "flux",
+			"namespace": "default",
 			"kind": "ServiceAccount"
 		}
 	]
@@ -305,24 +316,9 @@
 			"app.kubernetes.io/instance": "operator"
 		},
 		"name": "flux-git-deploy",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"type": "Opaque"
-}
-{
-  "apiVersion": "v1",
-  "kind": "ConfigMap",
-  "metadata": {
-    "labels": {
-      "app.kuberentes.io/name": "flux",
-      "app.kubernetes.io/instance": "operator"
-    },
-    "name": "flux-kube-config",
-    "namespace": "flux"
-  },
-  "data": {
-    "config": "{ \"apiVersion\": \"v1\", \"clusters\": [], \"contexts\": [ { \"context\": { \"cluster\": \"\", \"namespace\": \"default\", \"user\": \"\" }, \"name\": \"default\" } ], \"current-context\": \"default\", \"kind\": \"Config\", \"preferences\": {}, \"users\": [] }"
-  }
 }
 {
 	"apiVersion": "v1",
@@ -333,7 +329,7 @@
 			"app.kubernetes.io/instance": "operator"
 		},
 		"name": "flux",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"spec": {
 		"type": "ClusterIP",
@@ -360,7 +356,7 @@
 			"app.kubernetes.io/instance": "operator"
 		},
 		"name": "flux",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"spec": {
 		"replicas": 1,
@@ -378,14 +374,27 @@
 				}
 			},
 			"spec": {
+        "affinity": {
+          "nodeAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/role",
+                      "operator": "In",
+                      "values": [
+                        "infrastructure"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
 				"serviceAccountName": "flux",
 				"volumes": [
-					{
-						"name": "kubedir",
-						"configMap": {
-							"name": "flux-kube-config"
-						}
-					},
 					{
 						"name": "git-key",
 						"secret": {
@@ -403,7 +412,7 @@
 				"containers": [
 					{
 						"name": "flux",
-						"image": "docker.io/weaveworks/flux:1.12.1",
+						"image": "docker.io/fluxcd/flux:1.13.3",
 						"imagePullPolicy": "IfNotPresent",
 						"ports": [
 							{
@@ -414,10 +423,6 @@
 						],
 						"volumeMounts": [
 							{
-								"name": "kubedir",
-								"mountPath": "/root/.kubectl"
-							},
-							{
 								"name": "git-key",
 								"mountPath": "/etc/fluxd/ssh",
 								"readOnly": true
@@ -425,12 +430,6 @@
 							{
 								"name": "git-keygen",
 								"mountPath": "/var/fluxd/keygen"
-							}
-						],
-						"env": [
-							{
-								"name": "KUBECONFIG",
-								"value": "/root/.kubectl/config"
 							}
 						],
 						"args": [
@@ -442,7 +441,7 @@
 							"--git-branch=master",
 							"--git-path=",
 							"--git-user=Weave Flux",
-							"--git-email=support@weave.works",
+							"--git-email=devops@dat.com",
 							"--git-set-author=false",
 							"--git-poll-interval=5m",
 							"--git-timeout=20s",
@@ -454,6 +453,9 @@
 							"--registry-trace=false"
 						],
 						"resources": {
+              "limits": {
+                "memory": "128Mi"
+              },
 							"requests": {
 								"cpu": "50m",
 								"memory": "64Mi"
@@ -474,7 +476,7 @@
 			"app.kubernetes.io/instance": "helm-operator"
 		},
 		"name": "flux-helm-operator",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"spec": {
 		"replicas": 1,
@@ -493,6 +495,25 @@
 				}
 			},
 			"spec": {
+        "affinity": {
+          "nodeAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/role",
+                      "operator": "In",
+                      "values": [
+                        "infrastructure"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
 				"serviceAccountName": "flux",
 				"volumes": [
 					{
@@ -506,7 +527,7 @@
 				"containers": [
 					{
 						"name": "flux-helm-operator",
-						"image": "docker.io/weaveworks/helm-operator:0.8.0",
+						"image": "docker.io/fluxcd/helm-operator:0.10.1",
 						"imagePullPolicy": "IfNotPresent",
 						"ports": [
 							{
@@ -530,6 +551,9 @@
 							"--tiller-namespace=kube-system"
 						],
 						"resources": {
+              "limits": {
+                "memory": "128Mi"
+              },
 							"requests": {
 								"cpu": "50m",
 								"memory": "64Mi"
@@ -550,7 +574,7 @@
 			"app.kubernetes.io/instance": "memcached"
 		},
 		"name": "flux-memcached",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"spec": {
 		"replicas": 1,
@@ -571,10 +595,29 @@
 				}
 			},
 			"spec": {
+        "affinity": {
+          "nodeAffinity": {
+            "requiredDuringSchedulingIgnoredDuringExecution": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/role",
+                      "operator": "In",
+                      "values": [
+                        "infrastructure"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
 				"containers": [
 					{
 						"name": "memcached",
-						"image": "memcached:1.4.25",
+						"image": "memcached:1.5.15",
 						"imagePullPolicy": "IfNotPresent",
 						"args": [
 							"-m 512",
@@ -587,7 +630,11 @@
 								"containerPort": 11211
 							}
 						],
-						"resources": {}
+            "securityContext": {
+              "runAsUser": 11211,
+              "runAsGroup": 11211,
+              "allowPrivilegeEscalation": false
+            }
 					}
 				]
 			}
@@ -603,7 +650,7 @@
 			"app.kubernetes.io/instance": "memcached"
 		},
 		"name": "flux-memcached",
-		"namespace": "flux"
+		"namespace": "default"
 	},
 	"spec": {
 		"ports": [
