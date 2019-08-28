@@ -260,6 +260,8 @@ resource "aws_eks_cluster" "this" {
   //role_arn = "${var.cluster_role_arn}"
   role_arn = aws_iam_role.cluster.arn
 
+  enabled_cluster_log_types = var.enabled_cluster_logs
+
   timeouts {
     create = var.cluster_create_timeout
     update = var.cluster_update_timeout

@@ -188,6 +188,11 @@ variable "cluster_security_group_rule" {
   default = []
 }
 
+variable "enabled_cluster_logs" {
+  type    = list
+  default = null
+}
+
 /* configure worker nodes */
 variable "worker_ami" { default = "" }
 
