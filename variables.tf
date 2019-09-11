@@ -178,7 +178,7 @@ locals {
 variable "cluster_name"    {}
 variable "cluster_version" {}
 
-variable "cluster_create_timeout" { default = "15m" }
+variable "cluster_create_timeout" { default = "30m" }
 variable "cluster_update_timeout" { default = "60m" }
 variable "cluster_delete_timeout" { default = "15m" }
 
