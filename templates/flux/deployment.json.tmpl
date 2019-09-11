@@ -245,7 +245,7 @@
 	"kind": "ServiceAccount",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux",
@@ -257,7 +257,7 @@
 	"kind": "ClusterRole",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux"
@@ -289,7 +289,7 @@
 	"kind": "ClusterRoleBinding",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux"
@@ -312,7 +312,7 @@
 	"kind": "Secret",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux-git-deploy",
@@ -325,7 +325,7 @@
 	"kind": "Service",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux",
@@ -342,7 +342,7 @@
 			}
 		],
 		"selector": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "operator"
 		}
 	}
@@ -475,7 +475,7 @@
 	"kind": "Deployment",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "memcached"
 		},
 		"name": "flux-memcached",
@@ -488,14 +488,14 @@
 		},
 		"selector": {
 			"matchLabels": {
-				"app.kuberentes.io/name": "flux",
+				"app.kubernetes.io/name": "flux",
 				"app.kubernetes.io/component": "memcached"
 			}
 		},
 		"template": {
 			"metadata": {
 				"labels": {
-					"app.kuberentes.io/name": "flux",
+					"app.kubernetes.io/name": "flux",
 					"app.kubernetes.io/component": "memcached"
 				}
 			},
@@ -551,7 +551,7 @@
 	"kind": "Service",
 	"metadata": {
 		"labels": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "memcached"
 		},
 		"name": "flux-memcached",
@@ -567,7 +567,7 @@
 			}
 		],
 		"selector": {
-			"app.kuberentes.io/name": "flux",
+			"app.kubernetes.io/name": "flux",
 			"app.kubernetes.io/component": "memcached"
 		}
 	}
