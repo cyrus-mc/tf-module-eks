@@ -246,7 +246,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux",
 		"namespace": "default"
@@ -258,7 +258,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux"
 	},
@@ -290,7 +290,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux"
 	},
@@ -313,7 +313,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux-git-deploy",
 		"namespace": "default"
@@ -326,7 +326,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux",
 		"namespace": "default"
@@ -343,7 +343,7 @@
 		],
 		"selector": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		}
 	}
 }
@@ -353,7 +353,7 @@
 	"metadata": {
 		"labels": {
 			"app.kubernetes.io/name": "flux",
-			"app.kubernetes.io/instance": "operator"
+			"app.kubernetes.io/component": "operator"
 		},
 		"name": "flux",
 		"namespace": "default"
@@ -363,14 +363,14 @@
 		"selector": {
 			"matchLabels": {
 				"app.kubernetes.io/name": "flux",
-				"app.kubernetes.io/instance": "operator"
+				"app.kubernetes.io/component": "operator"
 			}
 		},
 		"template": {
 			"metadata": {
 				"labels": {
 					"app.kubernetes.io/name": "flux",
-					"app.kubernetes.io/instance": "operator"
+					"app.kubernetes.io/component": "operator"
 				}
 			},
 			"spec": {
@@ -412,7 +412,7 @@
 				"containers": [
 					{
 						"name": "flux",
-						"image": "docker.io/fluxcd/flux:1.13.3",
+            "image": "${flux_image}",
 						"imagePullPolicy": "IfNotPresent",
 						"ports": [
 							{
@@ -440,6 +440,7 @@
 							"--git-url=${git_url}",
 							"--git-branch=master",
 							"--git-path=",
+              "--git-readonly=true",
 							"--git-user=Weave Flux",
 							"--git-email=devops@dat.com",
 							"--git-set-author=false",
@@ -450,105 +451,9 @@
 							"--registry-poll-interval=5m",
 							"--registry-rps=200",
 							"--registry-burst=125",
-							"--registry-trace=false"
-						],
-						"resources": {
-              "limits": {
-                "memory": "128Mi"
-              },
-							"requests": {
-								"cpu": "50m",
-								"memory": "64Mi"
-							}
-						}
-					}
-				]
-			}
-		}
-	}
-}
-{
-	"apiVersion": "apps/v1",
-	"kind": "Deployment",
-	"metadata": {
-		"labels": {
-			"app.kubernetes.io/name": "flux",
-			"app.kubernetes.io/instance": "helm-operator"
-		},
-		"name": "flux-helm-operator",
-		"namespace": "default"
-	},
-	"spec": {
-		"replicas": 1,
-		"selector": {
-			"matchLabels": {
-				"app.kubernetes.io/name": "flux",
-				"app.kubernetes.io/instance": "helm-operator"
-			}
-		},
-		"template": {
-			"metadata": {
-				"annotations": null,
-				"labels": {
-					"app.kubernetes.io/name": "flux",
-					"app.kubernetes.io/instance": "helm-operator"
-				}
-			},
-			"spec": {
-        "affinity": {
-          "nodeAffinity": {
-            "requiredDuringSchedulingIgnoredDuringExecution": {
-              "nodeSelectorTerms": [
-                {
-                  "matchExpressions": [
-                    {
-                      "key": "kubernetes.io/role",
-                      "operator": "In",
-                      "values": [
-                        "infrastructure"
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        },
-				"serviceAccountName": "flux",
-				"volumes": [
-					{
-						"name": "git-key",
-						"secret": {
-							"secretName": "flux-git-deploy",
-							"defaultMode": 256
-						}
-					}
-				],
-				"containers": [
-					{
-						"name": "flux-helm-operator",
-						"image": "docker.io/fluxcd/helm-operator:0.10.1",
-						"imagePullPolicy": "IfNotPresent",
-						"ports": [
-							{
-								"name": "http",
-								"containerPort": 3030
-							}
-						],
-						"volumeMounts": [
-							{
-								"name": "git-key",
-								"mountPath": "/etc/fluxd/ssh",
-								"readOnly": true
-							}
-						],
-						"args": [
-							"--git-timeout=20s",
-							"--git-poll-interval=5m",
-							"--charts-sync-interval=3m",
-							"--update-chart-deps=true",
-							"--log-release-diffs=false",
-							"--tiller-namespace=kube-system"
+							"--registry-trace=false",
+              "--listen-metrics=:3031",
+              "--manifest-generation=true"
 						],
 						"resources": {
               "limits": {
@@ -571,7 +476,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "memcached"
+			"app.kubernetes.io/component": "memcached"
 		},
 		"name": "flux-memcached",
 		"namespace": "default"
@@ -584,14 +489,14 @@
 		"selector": {
 			"matchLabels": {
 				"app.kuberentes.io/name": "flux",
-				"app.kubernetes.io/instance": "memcached"
+				"app.kubernetes.io/component": "memcached"
 			}
 		},
 		"template": {
 			"metadata": {
 				"labels": {
 					"app.kuberentes.io/name": "flux",
-					"app.kubernetes.io/instance": "memcached"
+					"app.kubernetes.io/component": "memcached"
 				}
 			},
 			"spec": {
@@ -617,7 +522,7 @@
 				"containers": [
 					{
 						"name": "memcached",
-						"image": "memcached:1.5.15",
+            "image": "${memcached_image}",
 						"imagePullPolicy": "IfNotPresent",
 						"args": [
 							"-m 512",
@@ -647,7 +552,7 @@
 	"metadata": {
 		"labels": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "memcached"
+			"app.kubernetes.io/component": "memcached"
 		},
 		"name": "flux-memcached",
 		"namespace": "default"
@@ -663,7 +568,7 @@
 		],
 		"selector": {
 			"app.kuberentes.io/name": "flux",
-			"app.kubernetes.io/instance": "memcached"
+			"app.kubernetes.io/component": "memcached"
 		}
 	}
 }

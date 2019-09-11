@@ -10,7 +10,7 @@ locals {
   worker_ami = coalesce(join("", data.aws_ami.worker.*.id), var.worker_ami)
 
   enable_kiam = var.enable_kiam ? 1 : 0
-  enable_flux = var.enable_flux ? 1 : 0
+  enable_flux = lookup(var.flux_config, "enable", lookup(var.flux_default_config, "enable")) ? 1 : 0
 
   proxy_key_name  = var.proxy_key_name == "" ? lookup(var.worker_group_defaults, "key_name", "") : var.proxy_key_name
   proxy_subnet_id = var.proxy_subnet_id == "" ? element(var.worker_subnet_id, 0) : var.proxy_subnet_id
@@ -221,9 +221,17 @@ variable "kubeconfig_aws_authenticator_env_vars" { default = {} }
 
 /* configure optional addons */
 variable "enable_kiam" { default = false }
-variable "enable_flux" { default = false }
 
-variable "flux_git_url" { default = null }
+variable "flux_config" { default = {} }
+variable "flux_default_config" {
+  default = {
+    enable          = false
+    flux_image      = "docker.io/fluxcd/flux:1.14.2"
+    helm_image      = "docker.io/fluxcd/helm-operator:0.10.1"
+    memcached_image = "memcached:1.5.15"
+  }
+}
+//variable "flux_git_url" { default = null }
 
 /* configure use of proxy to protect API endpoint */
 variable "enable_proxy" { default = false }

@@ -505,7 +505,10 @@ data "template_file" "flux_deployment" {
   template = file("${path.module}/templates/flux/deployment.json.tmpl")
 
   vars = {
-    git_url = var.flux_git_url
+    git_url         = lookup(var.flux_config, "git_url")
+    flux_image      = lookup(var.flux_config, "flux_image", lookup(var.flux_default_config, "flux_image"))
+    helm_image      = lookup(var.flux_config, "helm_image", lookup(var.flux_default_config, "helm_image"))
+    memcached_image = lookup(var.flux_config, "memcached_image", lookup(var.flux_default_config, "memcached_image"))
   }
 }
 

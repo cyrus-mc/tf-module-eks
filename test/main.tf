@@ -11,7 +11,9 @@ module "eks" {
     key_name = "development_operations"
   }
 
-  enable_flux  = true
-  flux_git_url = format("git@bitbucket.org:dat/gitops-dev.git")
+  flux_config = {
+    enable = true
+    git_url = format("git@bitbucket.org:dat/gitops-dev.git")
+  }
 }
 
