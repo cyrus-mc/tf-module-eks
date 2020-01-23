@@ -77,6 +77,7 @@ This module exposes the following outputs:
   `cluster_certificate_authority_data` | Nested attribute containing certificate-authority-data for your cluster. This is the base64 encoded certificate data required to communicate with your cluster.
   `kubeconfig` | kubectl config file for this EKS cluster in YAML format.
   `kubeconfig_json` | kubectl config file for this EKS cluster in JSON format.
+  `identity_provider_arn` | ARN assigned by AWS for this OpenID Connect provider.
 
 
 ## Usage

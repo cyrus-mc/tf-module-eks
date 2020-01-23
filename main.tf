@@ -548,3 +548,15 @@ resource "null_resource" "tag-subnets" {
     CLUSTER = var.cluster_name
   }
 }
+
+resource "aws_iam_openid_connect_provider" "this" {
+  count = local.enable_iam_service_accounts
+
+  url = aws_eks_cluster.this.identity[0].oidc[0].issuer
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = []
+}

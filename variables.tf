@@ -166,6 +166,8 @@ locals {
 
   worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
 
+  enable_iam_service_accounts = (var.cluster_version >= 1.13) ? 1 : 0
+
   /*
     Default tags (loacl so you can't over-ride)
   */
