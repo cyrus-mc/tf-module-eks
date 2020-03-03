@@ -17,6 +17,8 @@ This module requires:
    -  [Null Resource Provider](https://github.com/terraform-providers/terraform-provider-null) `>= 2.1.0`
    -  [Local Provider](https://github.com/terraform-providers/terraform-provider-local) `>= 1.2.0`
 
+This module is intended to be used with the following [AMI](https://bitbucket.org/dat/packer-coreos-eks/src/master/) based on Fedora CoreOS.
+
 ### Inputs
 - - - -
 
@@ -52,7 +54,7 @@ Both worker_group and worker_group_defaults maps accept the following keys:
   `image_id`            | AMI ID for the eks workers. If not specified search for latest version of Amazon EKS optimized AMI. | string | `var.worker_ami if specified`
   `instance_type`       | Size of the worker instance(s). | string | `t2.2xlarge`
   `key_name`            | The key name that should be used for the instances in the autoscaling group. | string | -
-  `kubelet_extra_args`  | This string is passed directly to kubelet if set. Useful for adding labels or taints. | string | -
+  `settings`            | Map of key / value pairs passed in as environment variables via user data. | map | `{}`
   `max_size`            | Maximum worker capacity in the autoscaling group. | string | `3`
   `min_size`            | Minimum worker capacity in the autoscaling group. | string | `1`
   `name`                | Name of the worker group. Literal count.index will never be used but if name is not set, the count.index interpolation will be used. | string | -

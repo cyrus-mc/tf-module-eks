@@ -208,7 +208,7 @@ variable "worker_security_group_rule" {
 
 variable "worker_count" { default = null }
 variable "worker_group" {
-  type = list
+  type = any
 
   default = [ { "name" = "default" } ]
 }

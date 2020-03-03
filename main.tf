@@ -299,22 +299,6 @@ resource "null_resource" "tags_as_list_of_maps" {
   }
 }
 
-data "template_file" "worker_userdata" {
-  count = local.worker_count
-
-  template = file("${path.module}/templates/userdata.sh.tpl")
-
-  vars = {
-    cluster_name        = aws_eks_cluster.this.name
-    endpoint            = aws_eks_cluster.this.endpoint
-    cluster_auth_base64 = aws_eks_cluster.this.certificate_authority[0].data
-    system_profile      = lookup(var.worker_group[ count.index ], "system_profile",
-                                                                  local.worker_group_defaults[ "system_profile" ])
-    kubelet_extra_args  = lookup(var.worker_group[ count.index ], "kubelet_extra_args",
-                                                                  local.worker_group_defaults[ "kubelet_extra_args" ])
-  }
-}
-
 resource "aws_launch_configuration" "worker" {
   count = local.worker_count
 
@@ -339,7 +323,12 @@ resource "aws_launch_configuration" "worker" {
   key_name = lookup(var.worker_group[ count.index ], "key_name",
                                                      local.worker_group_defaults[ "key_name" ])
 
-  user_data_base64 = base64encode(element(data.template_file.worker_userdata.*.rendered, count.index))
+  /* double encode so that the data set is the base64 encoded string */
+  user_data = base64encode(base64encode(templatefile("${path.module}/templates/userdata.tmpl",
+                                                      { input = merge(lookup(var.worker_group[count.index], "settings", {}),
+                                                                      { CLUSTER_NAME = aws_eks_cluster.this.name,
+                                                                        B64_CLUSTER_CA = aws_eks_cluster.this.certificate_authority[0].data,
+                                                                        APISERVER_ENDPOINT = aws_eks_cluster.this.endpoint }) })))
 
   /* only enable ebs optimized for instance types that allow it */
   ebs_optimized = lookup(var.worker_group[count.index], "ebs_optimized",
