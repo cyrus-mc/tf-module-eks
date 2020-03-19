@@ -28,6 +28,7 @@ resource "aws_security_group" "worker" {
                            "Name" = format("EKS_worker.%s", var.cluster_name) })
 }
 
+/* define worker nodes egress rule (allow all) */
 resource "aws_security_group_rule" "worker_egress" {
   security_group_id = aws_security_group.worker.id
 
@@ -38,6 +39,8 @@ resource "aws_security_group_rule" "worker_egress" {
   type        = "egress"
 }
 
+
+/* define worker nodes ingress rule (allow all from other nodes) */
 resource "aws_security_group_rule" "workers_self" {
   security_group_id = aws_security_group.worker.id
 
@@ -48,26 +51,18 @@ resource "aws_security_group_rule" "workers_self" {
   type                     = "ingress"
 }
 
+/* define worker nodes ingress rule (allow from control plane nodes) */
 resource "aws_security_group_rule" "worker_cluster" {
   security_group_id = aws_security_group.worker.id
 
   source_security_group_id = aws_security_group.cluster.id
-  protocol                 = "all"
+  protocol                 = "-1"
   from_port                = 0
   to_port                  = 65535
   type                     = "ingress"
 }
 
-resource "aws_security_group_rule" "worker_cluster_https" {
-  security_group_id = aws_security_group.worker.id
-
-  source_security_group_id = aws_security_group.cluster.id
-  protocol                 = "tcp"
-  from_port                = 443
-  to_port                  = 443
-  type                     = "ingress"
-}
-
+/* additiona worker group ingress rules */
 resource "aws_security_group_rule" "worker_supplied" {
   count = length(var.worker_security_group_rule)
 
