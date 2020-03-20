@@ -105,6 +105,18 @@ resource "aws_security_group_rule" "cluster_worker_ingress" {
   type                     = "ingress"
 }
 
+resource "aws_security_group_rule" "cluster_endpoint_https" {
+  count = var.endpoint.private_access == true ? 1 : 0
+
+  security_group_id = aws_security_group.cluster.id
+
+  cidr_blocks = [ "0.0.0.0/0" ]
+  protocol    = "TCP"
+  from_port   = 443
+  to_port     = 443
+  type        = "ingress"
+}
+
 resource "aws_security_group_rule" "cluster_supplied" {
   count = length(var.cluster_security_group_rule)
 
