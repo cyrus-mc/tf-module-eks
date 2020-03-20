@@ -33,6 +33,7 @@ This module takes the following inputs:
   `cluster_update_timeout` | Timeout value when updating the EKS cluster. | string | `60m`
   `cluster_subnet_id` | A list of subnets to place the EKS cluster within. | list | -
   `cluster_security_group_rule` | Additional security group rule(s) to add to EKS cluster control place security group. | list | `[]`
+  `endpoint` | Map of boolean for enabling/disabling public and private endpoint access. | map | `{ "private_access" = false, "public_access" = true }`
   `enable_flux` | Enable/disable Weave Flux GitOps operator. | boolean | `false`
   `enable_kiam` | Enable/disable KIAM. | boolean | `false`
   `flux_git_url` | If `enable_kiam` is true, sets the git URL Flux operator points to. | string | ``

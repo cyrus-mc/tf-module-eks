@@ -195,6 +195,14 @@ variable "enabled_cluster_logs" {
   default = null
 }
 
+variable "endpoint" {
+  type = map
+  default = {
+    private_access = false
+    public_access  = true
+  }
+}
+
 /* configure worker nodes */
 variable "worker_ami" { default = "" }
 

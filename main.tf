@@ -267,6 +267,9 @@ resource "aws_eks_cluster" "this" {
   vpc_config {
     security_group_ids = [ aws_security_group.cluster.id ]
     subnet_ids         = var.cluster_subnet_id
+
+    endpoint_private_access = var.endpoint.private_access
+    endpoint_public_access  = var.endpoint.public_access
   }
 
   lifecycle {
