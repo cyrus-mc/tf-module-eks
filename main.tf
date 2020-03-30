@@ -150,6 +150,8 @@ resource "aws_iam_role" "cluster" {
 
   assume_role_policy    = data.aws_iam_policy_document.cluster_assume_role_policy.json
   force_detach_policies = true
+
+  tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
@@ -183,6 +185,8 @@ resource "aws_iam_role" "worker" {
 
   assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy.json
   force_detach_policies = true
+
+  tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKSWorkerNodePolicy" {
@@ -222,6 +226,8 @@ resource "aws_iam_role" "kiam" {
   assume_role_policy    = templatefile("${path.module}/templates/kiam/assume_role_policy.tmpl",
                                        { role = aws_iam_role.worker.arn })
   force_detach_policies = true
+
+  tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_policy" "kiam" {
@@ -290,6 +296,8 @@ resource "aws_eks_cluster" "this" {
       version
     ]
   }
+
+  tags = merge(var.tags, local.tags)
 
   /* set implicit dependency */
   depends_on = [
