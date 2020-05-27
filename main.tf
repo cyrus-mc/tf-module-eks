@@ -205,9 +205,9 @@ resource "aws_iam_role_policy_attachment" "worker_AmazonEC2ContainerRegistryRead
 }
 
 resource "aws_iam_role_policy_attachment" "worker_existing" {
-  count = length(var.worker_additional_policy)
+  count = local.worker_additional_policy_count
 
-  policy_arn = format("arn:aws:iam::aws:policy/%s", element(var.worker_additional_policy, count.index))
+  policy_arn = length(split(":", var.worker_additional_policy[ count.index ])) > 1 ? var.worker_additional_policy[ count.index ] : format("arn:aws:iam::aws:policy/%s", var.worker_additional_policy[ count.index ])
   role       = aws_iam_role.worker.name
 }
 

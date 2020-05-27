@@ -8,6 +8,7 @@ locals {
   kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tmpl") : format("%s", "kubeconfig.tmpl")
 
   worker_ami = coalesce(join("", data.aws_ami.worker.*.id), var.worker_ami)
+  worker_additional_policy_count = var.worker_additional_policy_count == null ? length(var.worker_additional_policy) : var.worker_additional_policy_count
 
   enable_kiam = var.enable_kiam ? 1 : 0
   enable_flux = lookup(var.flux_config, "enable", lookup(var.flux_default_config, "enable")) ? 1 : 0
@@ -206,7 +207,8 @@ variable "endpoint" {
 /* configure worker nodes */
 variable "worker_ami" { default = "" }
 
-variable "worker_additional_policy" { default = [] }
+variable "worker_additional_policy_count" { default = null }
+variable "worker_additional_policy"       { default = [] }
 
 variable "worker_subnet_id"           { type = list(string) }
 variable "worker_security_group_rule" {
