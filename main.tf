@@ -525,7 +525,7 @@ resource "null_resource" "apply_flux_deployment" {
   }
 
   triggers = {
-    deployment_rendered = data.template_file.flux_deployment[0].rendered
+    cluster_id = aws_eks_cluster.this.id
   }
 
   /* only run after the cluster is up */
