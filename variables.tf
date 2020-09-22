@@ -161,16 +161,37 @@ locals {
     root_volume_size      = "100"
     root_volume_type      = "gp2"
     root_iops             = "0"
-    subnets               = join(",", var.worker_subnet_id) # A comma delimited string of subnets to place the worker nodes in.
+    subnets               = var.worker_subnet_id
     system_profile        = ""
   }
 
   worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
 
+  /* construct list of all subnets used for the node groups */
+  worker_group_subnets = distinct(flatten([ for index in range(local.worker_count): [
+                                              for subnet in lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets):
+                                                subnet
+                                              ]
+                                          ]))
+  /* map worker group AZ to subnet */
+  worker_group_az_subnet_tmp = flatten([ for index in range(local.worker_count): [
+                                   for sindex, subnet in lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets):
+                                     { "subnet_id": subnet,
+                                       "subnet_index": sindex,
+                                       "availability_zone": data.aws_subnet.workers[subnet].availability_zone,
+                                       "availability_zone_count": length(lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets))
+                                       "name": lookup(var.worker_group[index], "name", index),
+                                       "index": index
+                                     }
+                                   ]
+                               ])
+
+  worker_group_az_subnet = { for item in local.worker_group_az_subnet_tmp: format("%s-%s", item.name, item.availability_zone) => item }
+
   enable_iam_service_accounts = (var.cluster_version >= 1.13) ? 1 : 0
 
   /*
-    Default tags (loacl so you can't over-ride)
+    Default tags (local so you can't over-ride)
   */
   tags = {
     builtWith = "terraform"

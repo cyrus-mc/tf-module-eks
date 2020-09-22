@@ -18,6 +18,13 @@ data "aws_subnet" "selected" {
   id = var.cluster_subnet_id[0]
 }
 
+/* query details for all subnets used for node groups */
+data "aws_subnet" "workers" {
+  for_each = toset(local.worker_group_subnets)
+
+  id = each.value
+}
+
 /* create worker security group */
 resource "aws_security_group" "worker" {
   name_prefix = format("EKS_worker.%s-", var.cluster_name)
@@ -386,8 +393,7 @@ resource "aws_autoscaling_group" "worker" {
                                                                   local.worker_group_defaults["protect_from_scale_in"])
 
   /* network settings */
-  vpc_zone_identifier = split(",", coalesce(lookup(var.worker_group[count.index], "subnets", ""),
-                                            local.worker_group_defaults["subnets"]))
+  vpc_zone_identifier = lookup(var.worker_group[count.index], "subnets", local.worker_group_defaults["subnets"])
 
   lifecycle {
     ignore_changes = [ desired_capacity ]
@@ -404,6 +410,46 @@ resource "aws_autoscaling_group" "worker" {
                                                                                           local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
                     "value"               = "true"
                     "propagate_at_launch" = true
+                   } ], local.asg_tags)
+}
+
+resource "aws_autoscaling_group" "worker_per_az" {
+  for_each = local.worker_group_az_subnet
+
+  name_prefix = format("%s-%s-%s-", var.cluster_name,
+                                    each.value.name,
+                                    each.value.availability_zone)
+
+  launch_configuration = element(aws_launch_configuration.worker.*.id, each.value.index)
+
+  desired_capacity = ceil((lookup(var.worker_group[each.value.index], "desired_capacity",
+                                                                local.worker_group_defaults["desired_capacity"]) - each.value.subnet_index) / each.value.availability_zone_count)
+  max_size         = ceil((lookup(var.worker_group[each.value.index], "max_size",
+                                                                local.worker_group_defaults["max_size"]) - each.value.subnet_index) / each.value.availability_zone_count)
+  min_size         = ceil((lookup(var.worker_group[each.value.index], "min_size",
+                                                                local.worker_group_defaults["min_size"]) - each.value.subnet_index) / each.value.availability_zone_count)
+
+  protect_from_scale_in = lookup(var.worker_group[each.value.index], "protect_from_scale_in",
+                                                                     local.worker_group_defaults["protect_from_scale_in"])
+
+ /* network settings */
+ vpc_zone_identifier = [ each.value.subnet_id ]
+
+  lifecycle {
+    ignore_changes = [ desired_capacity ]
+  }
+
+  tags = concat([ { "key"                 = "Name"
+                    "value"               = format("%s-%s", aws_eks_cluster.this.name,
+                                                               each.value.name)
+                    "propagate_at_launch" = true },
+                  { "key"                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
+                    "value"               = "owned"
+                    "propagate_at_launch" = true },
+                  { "key" = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[each.value.index], "autoscaling_enabled",
+                                                                                          local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "d  isabled"}"
+                    "value"               = "true"
+                   "propagate_at_launch" = true
                    } ], local.asg_tags)
 }
 
