@@ -374,45 +374,6 @@ resource "aws_launch_configuration" "worker" {
   }
 }
 
-resource "aws_autoscaling_group" "worker" {
-  count = local.worker_count
-
-  name_prefix = format("EKS_%s-%s-", var.cluster_name,
-                                     lookup(var.worker_group[ count.index ], "name", count.index))
-
-  launch_configuration = element(aws_launch_configuration.worker.*.id, count.index)
-
-  desired_capacity = lookup(var.worker_group[ count.index ], "desired_capacity",
-                                                             local.worker_group_defaults[ "desired_capacity" ])
-  max_size         = lookup(var.worker_group[ count.index ], "max_size",
-                                                             local.worker_group_defaults[ "max_size" ])
-  min_size         = lookup(var.worker_group[ count.index ], "min_size",
-                                                             local.worker_group_defaults[ "min_size" ])
-
-  protect_from_scale_in = lookup(var.worker_group[ count.index ], "protect_from_scale_in",
-                                                                  local.worker_group_defaults["protect_from_scale_in"])
-
-  /* network settings */
-  vpc_zone_identifier = lookup(var.worker_group[count.index], "subnets", local.worker_group_defaults["subnets"])
-
-  lifecycle {
-    ignore_changes = [ desired_capacity ]
-  }
-
-  tags = concat([ { "key"                 = "Name"
-                    "value"               = format("%s-%s", aws_eks_cluster.this.name,
-                                                             lookup(var.worker_group[ count.index ], "name", count.index))
-                    "propagate_at_launch" = true },
-                  { "key"                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-                    "value"               = "owned"
-                    "propagate_at_launch" = true },
-                  { "key" = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[ count.index ], "autoscaling_enabled",
-                                                                                          local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
-                    "value"               = "true"
-                    "propagate_at_launch" = true
-                   } ], local.asg_tags)
-}
-
 resource "aws_autoscaling_group" "worker_per_az" {
   for_each = local.worker_group_az_subnet
 
