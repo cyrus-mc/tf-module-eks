@@ -408,7 +408,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
                     "value"               = "owned"
                     "propagate_at_launch" = true },
                   { "key" = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[each.value.index], "autoscaling_enabled",
-                                                                                          local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "d  isabled"}"
+                                                                                          local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
                     "value"               = "true"
                    "propagate_at_launch" = true
                    } ], local.asg_tags)
