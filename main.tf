@@ -543,22 +543,13 @@ resource "null_resource" "apply_flux_deployment" {
 
 /* tag subnets accordingly
    (https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go) */
-resource "null_resource" "tag-subnets" {
-  provisioner "local-exec" {
-    command = "${path.module}/tag_subnets.sh"
+resource "aws_ec2_tag" "private" {
+  for_each = toset(var.worker_subnet_id)
 
-    environment = {
-      ACCOUNT_ID      = data.aws_caller_identity.current.account_id
-      CALLER_ARN      = data.aws_caller_identity.current.arn
-      CLUSTER         = replace(var.cluster_name, ".", "-")
-      PRIVATE_SUBNETS = join(" ", var.worker_subnet_id)
-    }
-  }
+  resource_id = each.key
 
-  /* only retag when cluster is modified */
-  triggers = {
-    CLUSTER = var.cluster_name
-  }
+  key   = "kubernetes.io/role/internal-elb"
+  value = "true"
 }
 
 resource "aws_iam_openid_connect_provider" "this" {
