@@ -225,6 +225,8 @@ variable "endpoint" {
   }
 }
 
+variable "kubernetes_service_cidr" { default = "172.20.0.0/16" }
+
 /* configure worker nodes */
 variable "worker_ami" { default = "" }
 
@@ -264,7 +266,6 @@ variable "flux_default_config" {
     memcached_image = "memcached:1.5.15"
   }
 }
-//variable "flux_git_url" { default = null }
 
 /* configure use of proxy to protect API endpoint */
 variable "enable_proxy" { default = false }

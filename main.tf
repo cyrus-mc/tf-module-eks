@@ -521,6 +521,7 @@ data "template_file" "flux_deployment" {
     flux_image      = lookup(var.flux_config, "flux_image", lookup(var.flux_default_config, "flux_image"))
     helm_image      = lookup(var.flux_config, "helm_image", lookup(var.flux_default_config, "helm_image"))
     memcached_image = lookup(var.flux_config, "memcached_image", lookup(var.flux_default_config, "memcached_image"))
+    cluster_dns_ip  = cidrhost(var.kubernetes_service_cidr, 10)
   }
 }
 

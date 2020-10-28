@@ -390,6 +390,21 @@
 						}
 					}
 				],
+        "dnsPolicy": "None",
+        "dnsConfig": {
+          "nameservers": [
+            "${cluster_dns_ip}"
+          ],
+          "options": [
+            {
+              "name": "ndots",
+              "value": "2"
+            }
+          ],
+          "searches": [
+            "default.svc.cluster.local"
+          ]
+        },
 				"containers": [
 					{
 						"name": "flux",
@@ -481,6 +496,21 @@
 				}
 			},
 			"spec": {
+        "dnsPolicy": "None",
+        "dnsConfig": {
+          "nameservers": [
+            "${cluster_dns_ip}"
+          ],
+          "options": [
+            {
+              "name": "ndots",
+              "value": "2"
+            }
+          ],
+          "searches": [
+            "default.svc.cluster.local"
+          ]
+        },
 				"containers": [
 					{
 						"name": "memcached",
