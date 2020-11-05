@@ -411,7 +411,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
                                                                                           local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
                     "value"               = "true"
                     "propagate_at_launch" = true
-                   } ], local.asg_tags, lookup(var.worker_group[count.index], "tags", [{}]))
+                   } ], local.asg_tags, lookup(var.worker_group[each.value.index], "tags", [{}]))
 }
 
 /* configure worker authentication */
