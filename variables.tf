@@ -2,7 +2,16 @@
 #         Local Variable definitions          #
 ###############################################
 locals {
-  asg_tags = null_resource.tags_as_list_of_maps.*.triggers
+
+  labels = flatten([ for group in var.worker_group: regexall("node-labels=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
+
+  label_tags = [ for labels in local.labels: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/label/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
+                                              flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
+
+ taints = flatten([ for group in var.worker_group: regexall("register-with-taints=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
+
+  label_taints = [ for labels in local.taints: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
+                                                flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
 
   kubeconfig_name     = var.kubeconfig_name == "" ? "${var.cluster_name}" : var.kubeconfig_name
   kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tmpl") : format("%s", "kubeconfig.tmpl")

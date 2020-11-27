@@ -313,17 +313,6 @@ resource "aws_eks_cluster" "this" {
   ]
 }
 
-/* create worker autoscaling groups */
-resource "null_resource" "tags_as_list_of_maps" {
-  count = length(keys(var.tags))
-
-  triggers = {
-    key                 = element(keys(var.tags), count.index)
-    value               = element(values(var.tags), count.index)
-    propagate_at_launch = true
-  }
-}
-
 resource "aws_launch_configuration" "worker" {
   count = local.worker_count
 
@@ -400,18 +389,55 @@ resource "aws_autoscaling_group" "worker_per_az" {
     ignore_changes = [ desired_capacity ]
   }
 
-  tags = concat([ { "key"                 = "Name"
-                    "value"               = format("%s-%s", aws_eks_cluster.this.name,
-                                                               each.value.name)
-                    "propagate_at_launch" = true },
-                  { "key"                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-                    "value"               = "owned"
-                    "propagate_at_launch" = true },
-                  { "key" = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[each.value.index], "autoscaling_enabled",
-                                                                                          local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
-                    "value"               = "true"
-                    "propagate_at_launch" = true
-                   } ], local.asg_tags, lookup(var.worker_group[each.value.index], "tags", [{}]))
+  /* add label tags */
+  dynamic "tag" {
+    for_each = length(local.label_tags) > each.value.index ? local.label_tags[each.value.index] : {}
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
+
+  /* add taint tags */
+  dynamic "tag" {
+    for_each = length(local.label_taints) > each.value.index ? local.label_taints[each.value.index] : {}
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
+
+  dynamic "tag" {
+    for_each = var.tags
+
+    content {
+      key = tag.key
+      value = tag.value
+      propagate_at_launch = true
+    }
+  }
+
+  tag {
+    key                 = "Name"
+    value               = format("%s-%s", aws_eks_cluster.this.name, each.value.name)
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
+    value               = "owned"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "k8s.io/cluster-autoscaler/${lookup(var.worker_group[each.value.index], "autoscaling_enabled", local.worker_group_defaults[ "autoscaling_enabled" ]) ? "enabled" : "disabled"}"
+    value               = true
+    propagate_at_launch = true
+  }
 }
 
 /* configure worker authentication */
