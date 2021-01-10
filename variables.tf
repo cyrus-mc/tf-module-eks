@@ -8,7 +8,7 @@ locals {
   label_tags = [ for labels in local.labels: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/label/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
                                               flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
 
- taints = flatten([ for group in var.worker_group: regexall("register-with-taints=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
+  taints = flatten([ for group in var.worker_group: regexall("register-with-taints=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
 
   label_taints = [ for labels in local.taints: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
                                                 flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
@@ -217,7 +217,7 @@ variable "cluster_delete_timeout" { default = "15m" }
 
 variable "cluster_subnet_id"           { type = list(string) }
 variable "cluster_security_group_rule" {
-  type    = list
+  type    = any
   default = []
 }
 
@@ -244,7 +244,7 @@ variable "worker_additional_policy"       { default = [] }
 
 variable "worker_subnet_id"           { type = list(string) }
 variable "worker_security_group_rule" {
-  type    = list
+  type    = any
   default = []
 }
 

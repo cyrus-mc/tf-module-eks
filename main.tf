@@ -75,7 +75,9 @@ resource "aws_security_group_rule" "worker_supplied" {
 
   security_group_id = aws_security_group.worker.id
 
-  cidr_blocks = var.worker_security_group_rule[ count.index ][ "cidr_blocks" ]
+  cidr_blocks              = lookup(var.worker_security_group_rule[ count.index ], "cidr_blocks", null)
+  source_security_group_id = lookup(var.worker_security_group_rule[ count.index ], "source_security_group", null)
+
   protocol    = var.worker_security_group_rule[ count.index ][ "protocol" ]
   from_port   = var.worker_security_group_rule[ count.index ][ "from_port" ]
   to_port     = var.worker_security_group_rule[ count.index ][ "to_port" ]
@@ -129,7 +131,9 @@ resource "aws_security_group_rule" "cluster_supplied" {
 
   security_group_id = aws_security_group.worker.id
 
-  cidr_blocks = var.cluster_security_group_rule[ count.index ][ "cidr_blocks" ]
+  cidr_blocks              = lookup(var.cluster_security_group_rule[ count.index ], "cidr_blocks", null)
+  source_security_group_id = lookup(var.cluster_security_group_rule[ count.index ], "source_security_group", null)
+
   protocol    = var.cluster_security_group_rule[ count.index ][ "protocol" ]
   from_port   = var.cluster_security_group_rule[ count.index ][ "from_port" ]
   to_port     = var.cluster_security_group_rule[ count.index ][ "to_port" ]
