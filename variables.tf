@@ -172,6 +172,7 @@ locals {
     root_iops             = "0"
     subnets               = var.worker_subnet_id
     system_profile        = ""
+    security_groups       = []
   }
 
   worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
