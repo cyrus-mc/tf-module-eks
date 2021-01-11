@@ -329,7 +329,8 @@ resource "aws_launch_configuration" "worker" {
   associate_public_ip_address = lookup(var.worker_group[count.index], "public_ip",
                                                                       local.worker_group_defaults[ "public_ip" ])
 
-  security_groups = [ aws_security_group.worker.id ]
+  security_groups = concat([ aws_security_group.worker.id ], lookup(var.worker_group[count.index], "security_groups",
+                                                                                                   local.worker_group_defaults[ "security_groups" ]))
 
   iam_instance_profile = aws_iam_instance_profile.worker.id
   image_id = lookup(var.worker_group[ count.index ], "image_id",
