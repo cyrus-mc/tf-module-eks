@@ -13,8 +13,8 @@ locals {
   label_taints = [ for labels in local.taints: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
                                                 flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
 
-  kubeconfig_name     = var.kubeconfig_name == "" ? "${var.cluster_name}" : var.kubeconfig_name
-  kubeconfig_template = var.enable_proxy ? format("%s", "kubeconfig_proxy.tmpl") : format("%s", "kubeconfig.tmpl")
+  kubeconfig_name     = var.kubeconfig_name == "" ? var.cluster_name : var.kubeconfig_name
+  kubeconfig_template = var.enable_proxy ? "kubeconfig_proxy.tmpl" : "kubeconfig.tmpl"
 
   worker_ami = coalesce(join("", data.aws_ami.worker.*.id), var.worker_ami)
   worker_additional_policy_count = var.worker_additional_policy_count == null ? length(var.worker_additional_policy) : var.worker_additional_policy_count
