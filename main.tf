@@ -226,6 +226,8 @@ resource "aws_iam_instance_profile" "worker" {
   name = format("EKS_worker.%s", var.cluster_name)
 
   role = aws_iam_role.worker.name
+
+  tags = merge(var.tags, local.tags)
 }
 
 /* support for kiam */
