@@ -393,6 +393,9 @@ Terraform will perform the following actions:
       + name        = "EKS_worker.development"
       + path        = "/"
       + role        = "EKS_worker.development"
+      + tags        = {
+          + "builtWith" = "terraform"
+        }
       + unique_id   = (known after apply)
     }
 
@@ -417,6 +420,7 @@ Terraform will perform the following actions:
       + create_date           = (known after apply)
       + force_detach_policies = true
       + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
       + max_session_duration  = 3600
       + name                  = "EKS_control.development"
       + path                  = "/"
@@ -424,6 +428,11 @@ Terraform will perform the following actions:
           + "builtWith" = "terraform"
         }
       + unique_id             = (known after apply)
+
+      + inline_policy {
+          + name   = (known after apply)
+          + policy = (known after apply)
+        }
     }
 
   # module.eks.aws_iam_role.worker will be created
@@ -447,6 +456,7 @@ Terraform will perform the following actions:
       + create_date           = (known after apply)
       + force_detach_policies = true
       + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
       + max_session_duration  = 3600
       + name                  = "EKS_worker.development"
       + path                  = "/"
@@ -454,6 +464,11 @@ Terraform will perform the following actions:
           + "builtWith" = "terraform"
         }
       + unique_id             = (known after apply)
+
+      + inline_policy {
+          + name   = (known after apply)
+          + policy = (known after apply)
+        }
     }
 
   # module.eks.aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy will be created

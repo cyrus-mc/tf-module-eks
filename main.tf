@@ -250,6 +250,8 @@ resource "aws_iam_policy" "kiam" {
 
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
+
+  tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "kiam" {
@@ -267,6 +269,8 @@ resource "aws_iam_policy" "kiam_worker" {
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/worker_policy.tmpl",
                         { role = aws_iam_role.kiam[0].arn })
+
+  tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "kiam_worker" {
@@ -596,4 +600,6 @@ resource "aws_iam_openid_connect_provider" "this" {
   ]
 
   thumbprint_list = []
+
+  tags = merge(var.tags, local.tags)
 }
