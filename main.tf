@@ -25,121 +25,6 @@ data "aws_subnet" "workers" {
   id = each.value
 }
 
-/* create worker security group */
-resource "aws_security_group" "worker" {
-  name_prefix = format("EKS_worker.%s-", var.cluster_name)
-
-  vpc_id = data.aws_subnet.selected.vpc_id
-
-  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("EKS_worker.%s", var.cluster_name) })
-}
-
-/* define worker nodes egress rule (allow all) */
-resource "aws_security_group_rule" "worker_egress" {
-  security_group_id = aws_security_group.worker.id
-
-  cidr_blocks = [ "0.0.0.0/0" ]
-  protocol    = "-1"
-  from_port   = 0
-  to_port     = 0
-  type        = "egress"
-}
-
-
-/* define worker nodes ingress rule (allow all from other nodes) */
-resource "aws_security_group_rule" "workers_self" {
-  security_group_id = aws_security_group.worker.id
-
-  source_security_group_id = aws_security_group.worker.id
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 65535
-  type                     = "ingress"
-}
-
-/* define worker nodes ingress rule (allow from control plane nodes) */
-resource "aws_security_group_rule" "worker_cluster" {
-  security_group_id = aws_security_group.worker.id
-
-  source_security_group_id = aws_security_group.cluster.id
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 65535
-  type                     = "ingress"
-}
-
-/* additiona worker group ingress rules */
-resource "aws_security_group_rule" "worker_supplied" {
-  count = length(var.worker_security_group_rule)
-
-  security_group_id = aws_security_group.worker.id
-
-  cidr_blocks              = lookup(var.worker_security_group_rule[ count.index ], "cidr_blocks", null)
-  source_security_group_id = lookup(var.worker_security_group_rule[ count.index ], "source_security_group", null)
-
-  protocol    = var.worker_security_group_rule[ count.index ][ "protocol" ]
-  from_port   = var.worker_security_group_rule[ count.index ][ "from_port" ]
-  to_port     = var.worker_security_group_rule[ count.index ][ "to_port" ]
-  type        = "ingress"
-}
-
-/* create control plane security group */
-resource "aws_security_group" "cluster" {
-  name_prefix = format("EKS_control.%s-", var.cluster_name)
-
-  vpc_id = data.aws_subnet.selected.vpc_id
-
-  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("EKS_control.%s", var.cluster_name) })
-}
-
-resource "aws_security_group_rule" "cluster_egress" {
-  security_group_id = aws_security_group.cluster.id
-
-  cidr_blocks = [ "0.0.0.0/0" ]
-  protocol    = "-1"
-  from_port   = 0
-  to_port     = 0
-  type        = "egress"
-}
-
-resource "aws_security_group_rule" "cluster_worker_ingress" {
-  security_group_id = aws_security_group.cluster.id
-
-  source_security_group_id = aws_security_group.worker.id
-  protocol                 = "TCP"
-  from_port                = 443
-  to_port                  = 443
-  type                     = "ingress"
-}
-
-resource "aws_security_group_rule" "cluster_endpoint_https" {
-  count = var.endpoint.private_access == true ? 1 : 0
-
-  security_group_id = aws_security_group.cluster.id
-
-  cidr_blocks = [ "0.0.0.0/0" ]
-  protocol    = "TCP"
-  from_port   = 443
-  to_port     = 443
-  type        = "ingress"
-}
-
-resource "aws_security_group_rule" "cluster_supplied" {
-  count = length(var.cluster_security_group_rule)
-
-  security_group_id = aws_security_group.worker.id
-
-  cidr_blocks              = lookup(var.cluster_security_group_rule[ count.index ], "cidr_blocks", null)
-  source_security_group_id = lookup(var.cluster_security_group_rule[ count.index ], "source_security_group", null)
-
-  protocol    = var.cluster_security_group_rule[ count.index ][ "protocol" ]
-  from_port   = var.cluster_security_group_rule[ count.index ][ "from_port" ]
-  to_port     = var.cluster_security_group_rule[ count.index ][ "to_port" ]
-  type        = "ingress"
-}
-
 /* create cluster IAM role */
 data "aws_iam_policy_document" "cluster_assume_role_policy" {
   statement {
@@ -323,6 +208,48 @@ resource "aws_eks_cluster" "this" {
   ]
 }
 
+/* https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html */
+
+/* create node security group */
+resource "aws_security_group" "cluster" {
+  name_prefix = format("EKS_control.%s-", var.cluster_name)
+
+  vpc_id = data.aws_subnet.selected.vpc_id
+
+  tags = merge(var.tags, { "Name" = format("eks-additional-sg-%s", var.cluster_name) })
+}
+
+/* use _rule resource as k8s will add rules based on ingress resources */
+resource "aws_security_group_rule" "cluster-egress" {
+  for_each = local.sg_outbound_default
+
+  type = "egress"
+
+  from_port                = each.value.from_port
+  to_port                  = lookup(each.value, "to_port", each.value.from_port)
+  protocol                 = lookup(each.value, "protocol", "TCP")
+  cidr_blocks              = lookup(each.value, "cidr_blocks", null)
+  source_security_group_id = lookup(each.value, "cidr_blocks", null) == null ? lookup(each.value, "source_security_group_id", null) : null
+  self                     = lookup(each.value, "cidr_blocks", null) == null ? (lookup(each.value, "security_groups", null) == null ? lookup(each.value, "self", null) : null) : null
+
+  security_group_id = aws_security_group.cluster.id
+}
+
+resource "aws_security_group_rule" "cluster-ingress" {
+  for_each = local.sg_inbound_default
+
+  type = "ingress"
+
+  from_port                = each.value.from_port
+  to_port                  = lookup(each.value, "to_port", each.value.from_port)
+  protocol                 = lookup(each.value, "protocol", "TCP")
+  cidr_blocks              = lookup(each.value, "cidr_blocks", null)
+  source_security_group_id = lookup(each.value, "cidr_blocks", null) == null ? lookup(each.value, "source_security_group_id", null) : null
+  self                     = lookup(each.value, "cidr_blocks", null) == null ? (lookup(each.value, "security_groups", null) == null ? lookup(each.value, "self", null) : null) : null
+
+  security_group_id = aws_security_group.cluster.id
+}
+
 resource "aws_launch_configuration" "worker" {
   count = local.worker_count
 
@@ -335,8 +262,9 @@ resource "aws_launch_configuration" "worker" {
   associate_public_ip_address = lookup(var.worker_group[count.index], "public_ip",
                                                                       local.worker_group_defaults[ "public_ip" ])
 
-  security_groups = concat([ aws_security_group.worker.id ], lookup(var.worker_group[count.index], "security_groups",
-                                                                                                   local.worker_group_defaults[ "security_groups" ]))
+  security_groups = concat([ aws_security_group.cluster.id ],
+                           lookup(var.worker_group[count.index], "security_groups",
+                                                                 local.worker_group_defaults[ "security_groups" ]))
 
   iam_instance_profile = aws_iam_instance_profile.worker.id
   image_id = lookup(var.worker_group[ count.index ], "image_id",
@@ -602,4 +530,14 @@ resource "aws_iam_openid_connect_provider" "this" {
   thumbprint_list = []
 
   tags = merge(var.tags, local.tags)
+}
+
+/* create worker security group (remove after nodes are cycled) */
+resource "aws_security_group" "worker" {
+  name_prefix = format("EKS_worker.%s-", var.cluster_name)
+
+  vpc_id = data.aws_subnet.selected.vpc_id
+
+  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
+                           "Name" = format("EKS_worker.%s", var.cluster_name) })
 }

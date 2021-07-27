@@ -175,6 +175,32 @@ locals {
     security_groups       = []
   }
 
+  sg_inbound_default = {
+    https = {
+      from_port = 443
+      protocol  = "TCP"
+      source_security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+    }
+    kubelet = {
+      from_port = 10250
+      protocol  = "TCP"
+      source_security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+    }
+    all = {
+      from_port = 0
+      protocol  = "-1"
+      self      = true
+    }
+  }
+
+  sg_outbound_default = {
+    all = {
+      from_port   = 0
+      protocol    = "-1"
+      cidr_blocks = [ "0.0.0.0/0" ]
+    }
+  }
+
   worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
 
   /* construct list of all subnets used for the node groups */
@@ -217,10 +243,6 @@ variable "cluster_update_timeout" { default = "60m" }
 variable "cluster_delete_timeout" { default = "15m" }
 
 variable "cluster_subnet_id"           { type = list(string) }
-variable "cluster_security_group_rule" {
-  type    = any
-  default = []
-}
 
 variable "enabled_cluster_logs" {
   type    = list
@@ -244,10 +266,6 @@ variable "worker_additional_policy_count" { default = null }
 variable "worker_additional_policy"       { default = [] }
 
 variable "worker_subnet_id"           { type = list(string) }
-variable "worker_security_group_rule" {
-  type    = any
-  default = []
-}
 
 variable "worker_count" { default = null }
 variable "worker_group" {

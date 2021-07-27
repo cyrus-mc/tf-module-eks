@@ -66,7 +66,7 @@ resource "aws_security_group_rule" "proxy_egress" {
 resource "aws_security_group_rule" "proxy_cluster_ingress" {
   count = (var.enable_proxy ? 1 : 0)
 
-  security_group_id = aws_security_group.cluster.id
+  security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
 
   source_security_group_id = aws_security_group.proxy[0].id
   protocol                 = "TCP"
