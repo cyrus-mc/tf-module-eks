@@ -531,13 +531,3 @@ resource "aws_iam_openid_connect_provider" "this" {
 
   tags = merge(var.tags, local.tags)
 }
-
-/* create worker security group (remove after nodes are cycled) */
-resource "aws_security_group" "worker" {
-  name_prefix = format("EKS_worker.%s-", var.cluster_name)
-
-  vpc_id = data.aws_subnet.selected.vpc_id
-
-  tags = merge(var.tags, { format("kubernetes.io/cluster/%s", var.cluster_name) = "owned"
-                           "Name" = format("EKS_worker.%s", var.cluster_name) })
-}
