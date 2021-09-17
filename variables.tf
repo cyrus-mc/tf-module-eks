@@ -3,15 +3,17 @@
 ###############################################
 locals {
 
-  labels = flatten([ for group in var.worker_group: regexall("node-labels=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
+  labels = { for key, settings in var.worker_group: key => flatten(regexall("node-labels=([^\\s]*)", lookup(lookup(settings, "settings", {}), "KUBELET_EXTRA_ARGS")))[0] }
 
-  label_tags = [ for labels in local.labels: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/label/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
-                                              flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
+  label_tags = { for key, labels in local.labels: key =>  zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/label/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
+                                                                 flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) }
 
-  taints = flatten([ for group in var.worker_group: regexall("register-with-taints=([^\\s]*)", lookup(lookup(group, "settings", {}), "KUBELET_EXTRA_ARGS")) ])
+  taints = { for key, settings in var.worker_group: key => flatten(regexall("register-with-taints=([^\\s]*)", lookup(lookup(settings, "settings", {}), "KUBELET_EXTRA_ARGS"))) }
 
-  label_taints = [ for labels in local.taints: zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
-                                                flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) ]
+  label_taints = { for key, taints in local.taints: key => zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", taints[0]))),
+                                                                  flatten(regexall("(?:[^=]*)=([^,]*),?", taints[0])))
+                     if length(taints) > 0
+                 }
 
   kubeconfig_name     = var.kubeconfig_name == "" ? var.cluster_name : var.kubeconfig_name
   kubeconfig_template = var.enable_proxy ? "kubeconfig_proxy.tmpl" : "kubeconfig.tmpl"
@@ -151,7 +153,7 @@ locals {
     "x1e.32xlarge" = true
   }
 
-  worker_count = var.worker_count == null ? length(var.worker_group) : var.worker_count
+  worker_count = var.worker_count == null ? length(keys(var.worker_group)) : var.worker_count
 
   worker_group_defaults_defaults = {
     autoscaling_enabled   = false
@@ -204,23 +206,23 @@ locals {
   worker_group_defaults = merge(local.worker_group_defaults_defaults, var.worker_group_defaults)
 
   /* construct list of all subnets used for the node groups */
-  worker_group_subnets = distinct(flatten([ for index in range(local.worker_count): [
-                                              for subnet in lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets):
-                                                subnet
-                                              ]
+  worker_group_subnets = distinct(flatten([ for key, settings in var.worker_group:
+                                              [ for subnet in lookup(settings, "subnets", local.worker_group_defaults_defaults.subnets): subnet ]
                                           ]))
+
   /* map worker group AZ to subnet */
-  worker_group_az_subnet_tmp = flatten([ for index in range(local.worker_count): [
-                                   for sindex, subnet in lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets):
-                                     { "subnet_id": subnet,
-                                       "subnet_index": sindex,
-                                       "availability_zone": data.aws_subnet.workers[subnet].availability_zone,
-                                       "availability_zone_count": length(lookup(var.worker_group[index], "subnets", local.worker_group_defaults_defaults.subnets))
-                                       "name": lookup(var.worker_group[index], "name", index),
-                                       "index": index
-                                     }
-                                   ]
-                               ])
+  worker_group_az_subnet_tmp = flatten([ for key, settings in var.worker_group: [
+                                           for sindex, subnet in lookup(settings, "subnets", local.worker_group_defaults_defaults.subnets):
+                                             {
+                                               "subnet_id": subnet,
+                                               "subnet_index": sindex,
+                                               "availability_zone": data.aws_subnet.workers[subnet].availability_zone,
+                                               "availability_zone_count": length(lookup(settings, "subnets", local.worker_group_defaults_defaults.subnets)),
+                                               "name": lookup(settings, "name", key),
+                                               "index": key
+                                             }
+                                         ]
+                                       ])
 
   worker_group_az_subnet = { for item in local.worker_group_az_subnet_tmp: format("%s-%s", item.name, item.availability_zone) => item }
 
@@ -273,9 +275,8 @@ variable "worker_subnet_id"           { type = list(string) }
 
 variable "worker_count" { default = null }
 variable "worker_group" {
-  type = any
-
-  default = [ { "name" = "default" } ]
+  type    = any
+  default = {}
 }
 
 variable "worker_group_defaults" { default = {} }

@@ -97,14 +97,14 @@ resource "aws_iam_role" "worker" {
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKSWorkerNodePolicy" {
   count = var.eks_worker_role_arn != null ? 0 : 1
-  
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.worker[0].name
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKS_CNI_Policy" {
   count = var.eks_worker_role_arn != null ? 0 : 1
-  
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.worker[0].name
 }
@@ -271,48 +271,40 @@ resource "aws_security_group_rule" "cluster-ingress" {
 }
 
 resource "aws_launch_configuration" "worker" {
-  count = local.worker_count
+  for_each = var.worker_group
 
   name_prefix = format("EKS_%s-%s-", var.cluster_name,
-                                     lookup(var.worker_group[ count.index ], "name", count.index))
+                                     lookup(each.value, "name", each.key))
 
-  enable_monitoring = lookup(var.worker_group[ count.index ], "enable_monitoring",
-                                                              local.worker_group_defaults[ "enable_monitoring" ])
+  enable_monitoring = lookup(each.value, "enable_monitoring", local.worker_group_defaults[ "enable_monitoring" ])
 
-  associate_public_ip_address = lookup(var.worker_group[count.index], "public_ip",
-                                                                      local.worker_group_defaults[ "public_ip" ])
+  associate_public_ip_address = lookup(each.value, "public_ip", local.worker_group_defaults[ "public_ip" ])
 
   security_groups = concat([ aws_security_group.cluster.id ],
-                           lookup(var.worker_group[count.index], "security_groups",
-                                                                 local.worker_group_defaults[ "security_groups" ]))
+                           lookup(each.value, "security_groups", local.worker_group_defaults[ "security_groups" ]))
 
   iam_instance_profile = format("EKS_worker.%s", var.cluster_name)
-  image_id = lookup(var.worker_group[ count.index ], "image_id",
-                                                     local.worker_group_defaults[ "image_id" ])
 
-  instance_type = lookup(var.worker_group[ count.index ], "instance_type",
-                                                          local.worker_group_defaults[ "instance_type" ])
+  image_id      = lookup(each.value, "image_id", local.worker_group_defaults[ "image_id" ])
+  instance_type = lookup(each.value, "instance_type", local.worker_group_defaults[ "instance_type" ])
 
-  key_name = lookup(var.worker_group[ count.index ], "key_name",
-                                                     local.worker_group_defaults[ "key_name" ])
+  key_name = lookup(each.value, "key_name", local.worker_group_defaults[ "key_name" ])
 
-  user_data = templatefile("${path.module}/templates/ignition.tmpl", { FILE_CONTENTS = base64encode(templatefile("${path.module}/templates/eks_config.tmpl", { input = merge(lookup(var.worker_group[count.index], "settings", {}),
+  user_data = templatefile("${path.module}/templates/ignition.tmpl", { FILE_CONTENTS = base64encode(templatefile("${path.module}/templates/eks_config.tmpl", { input = merge(lookup(each.value, "settings", {}),
                                                                                                                                                                              { CLUSTER_NAME = aws_eks_cluster.this.name,
                                                                                                                                                                                B64_CLUSTER_CA = aws_eks_cluster.this.certificate_authority[0].data,
                                                                                                                                                                                APISERVER_ENDPOINT = aws_eks_cluster.this.endpoint }) }))})
 
   /* only enable ebs optimized for instance types that allow it */
-  ebs_optimized = lookup(var.worker_group[count.index], "ebs_optimized",
-                                                        lookup(local.ebs_optimized, lookup(var.worker_group[ count.index ], "instance_type",
-                                                        local.worker_group_defaults[ "instance_type" ]),
-                                                        false))
+  ebs_optimized = lookup(each.value, "ebs_optimized", lookup(local.ebs_optimized, lookup(each.value, "instance_type",
+                                                                                                     local.worker_group_defaults[ "instance_type" ]),
+                                                                                  false))
 
   root_block_device {
-    volume_size = lookup(var.worker_group[ count.index ], "root_volume_size",
-                                                          local.worker_group_defaults[ "root_volume_size" ])
-    volume_type = lookup(var.worker_group[ count.index ], "root_volume_type",
-                                                          local.worker_group_defaults[ "root_volume_type" ])
-    iops        = lookup(var.worker_group[ count.index ], "root_iops", local.worker_group_defaults[ "root_iops" ])
+    volume_size = lookup(each.value, "root_volume_size", local.worker_group_defaults[ "root_volume_size" ])
+    volume_type = lookup(each.value, "root_volume_type", local.worker_group_defaults[ "root_volume_type" ])
+
+    iops = lookup(each.value, "root_iops", local.worker_group_defaults[ "root_iops" ])
 
     delete_on_termination = true
   }
@@ -329,7 +321,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
                                     each.value.name,
                                     each.value.availability_zone)
 
-  launch_configuration = element(aws_launch_configuration.worker.*.id, each.value.index)
+  launch_configuration = aws_launch_configuration.worker[each.value.index].id
 
   desired_capacity = ceil((lookup(var.worker_group[each.value.index], "desired_capacity",
                                                                 local.worker_group_defaults["desired_capacity"]) - each.value.subnet_index) / each.value.availability_zone_count)
@@ -350,7 +342,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
 
   /* add label tags */
   dynamic "tag" {
-    for_each = length(local.label_tags) > each.value.index ? local.label_tags[each.value.index] : {}
+    for_each = lookup(local.label_tags, each.value.index, {})
 
     content {
       key                 = tag.key
@@ -361,7 +353,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
 
   /* add taint tags */
   dynamic "tag" {
-    for_each = length(local.label_taints) > each.value.index ? local.label_taints[each.value.index] : {}
+    for_each = lookup(local.label_taints, each.value.index, {})
 
     content {
       key                 = tag.key
@@ -401,6 +393,19 @@ resource "aws_autoscaling_group" "worker_per_az" {
 
 /* configure worker authentication */
 data "template_file" "worker_aws_auth" {
+  //count = var.eks_worker_role_arn != null ? 0 : 1
+
+/*
+FIX ME: cleanup
+resource "aws_iam_instance_profile" "worker" {
+  name = format("EKS_worker.%s", var.cluster_name)
+
+  role = var.eks_worker_role_arn != null ? var.eks_worker_role_arn : aws_iam_role.worker[0].name
+
+  tags = merge(var.tags, local.tags)
+}
+*/
+
   template = file("${path.module}/templates/config-map-aws-auth.json.tmpl")
 
   vars = {
