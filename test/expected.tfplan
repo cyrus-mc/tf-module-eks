@@ -133,6 +133,7 @@ Terraform will perform the following actions:
       + default_cooldown          = (known after apply)
       + desired_capacity          = 1
       + force_delete              = false
+      + force_delete_warm_pool    = false
       + health_check_grace_period = 300
       + health_check_type         = (known after apply)
       + id                        = (known after apply)
@@ -188,6 +189,7 @@ Terraform will perform the following actions:
       + default_cooldown          = (known after apply)
       + desired_capacity          = 1
       + force_delete              = false
+      + force_delete_warm_pool    = false
       + health_check_grace_period = 300
       + health_check_type         = (known after apply)
       + id                        = (known after apply)
@@ -243,6 +245,7 @@ Terraform will perform the following actions:
       + default_cooldown          = (known after apply)
       + desired_capacity          = 1
       + force_delete              = false
+      + force_delete_warm_pool    = false
       + health_check_grace_period = 300
       + health_check_type         = (known after apply)
       + id                        = (known after apply)
@@ -288,6 +291,7 @@ Terraform will perform the following actions:
       + default_cooldown          = (known after apply)
       + desired_capacity          = 1
       + force_delete              = false
+      + force_delete_warm_pool    = false
       + health_check_grace_period = 300
       + health_check_type         = (known after apply)
       + id                        = (known after apply)
@@ -357,6 +361,9 @@ Terraform will perform the following actions:
       + tags                  = {
           + "builtWith" = "terraform"
         }
+      + tags_all              = {
+          + "builtWith" = "terraform"
+        }
       + version               = "1.11"
 
       + kubernetes_network_config {
@@ -396,6 +403,9 @@ Terraform will perform the following actions:
       + tags        = {
           + "builtWith" = "terraform"
         }
+      + tags_all    = {
+          + "builtWith" = "terraform"
+        }
       + unique_id   = (known after apply)
     }
 
@@ -425,6 +435,9 @@ Terraform will perform the following actions:
       + name                  = "EKS_control.development"
       + path                  = "/"
       + tags                  = {
+          + "builtWith" = "terraform"
+        }
+      + tags_all              = {
           + "builtWith" = "terraform"
         }
       + unique_id             = (known after apply)
@@ -461,6 +474,9 @@ Terraform will perform the following actions:
       + name                  = "EKS_worker.development"
       + path                  = "/"
       + tags                  = {
+          + "builtWith" = "terraform"
+        }
+      + tags_all              = {
           + "builtWith" = "terraform"
         }
       + unique_id             = (known after apply)
@@ -529,6 +545,7 @@ Terraform will perform the following actions:
           + iops                  = (known after apply)
           + no_device             = (known after apply)
           + snapshot_id           = (known after apply)
+          + throughput            = (known after apply)
           + volume_size           = (known after apply)
           + volume_type           = (known after apply)
         }
@@ -543,6 +560,7 @@ Terraform will perform the following actions:
           + delete_on_termination = true
           + encrypted             = (known after apply)
           + iops                  = 0
+          + throughput            = (known after apply)
           + volume_size           = 100
           + volume_type           = "gp2"
         }
@@ -571,6 +589,7 @@ Terraform will perform the following actions:
           + iops                  = (known after apply)
           + no_device             = (known after apply)
           + snapshot_id           = (known after apply)
+          + throughput            = (known after apply)
           + volume_size           = (known after apply)
           + volume_type           = (known after apply)
         }
@@ -585,6 +604,7 @@ Terraform will perform the following actions:
           + delete_on_termination = true
           + encrypted             = (known after apply)
           + iops                  = 0
+          + throughput            = (known after apply)
           + volume_size           = 100
           + volume_type           = "gp2"
         }
@@ -602,32 +622,16 @@ Terraform will perform the following actions:
       + owner_id               = (known after apply)
       + revoke_rules_on_delete = false
       + tags                   = {
-          + "Name"                              = "EKS_control.development"
-          + "kubernetes.io/cluster/development" = "owned"
+          + "Name" = "eks-additional-sg-development.us-west-2"
+        }
+      + tags_all               = {
+          + "Name" = "eks-additional-sg-development.us-west-2"
         }
       + vpc_id                 = "vpc-643a0203"
     }
 
-  # module.eks.aws_security_group.worker will be created
-  + resource "aws_security_group" "worker" {
-      + arn                    = (known after apply)
-      + description            = "Managed by Terraform"
-      + egress                 = (known after apply)
-      + id                     = (known after apply)
-      + ingress                = (known after apply)
-      + name                   = (known after apply)
-      + name_prefix            = "EKS_worker.development-"
-      + owner_id               = (known after apply)
-      + revoke_rules_on_delete = false
-      + tags                   = {
-          + "Name"                              = "EKS_worker.development"
-          + "kubernetes.io/cluster/development" = "owned"
-        }
-      + vpc_id                 = "vpc-643a0203"
-    }
-
-  # module.eks.aws_security_group_rule.cluster_egress will be created
-  + resource "aws_security_group_rule" "cluster_egress" {
+  # module.eks.aws_security_group_rule.cluster-egress["all"] will be created
+  + resource "aws_security_group_rule" "cluster-egress" {
       + cidr_blocks              = [
           + "0.0.0.0/0",
         ]
@@ -641,54 +645,41 @@ Terraform will perform the following actions:
       + type                     = "egress"
     }
 
-  # module.eks.aws_security_group_rule.cluster_worker_ingress will be created
-  + resource "aws_security_group_rule" "cluster_worker_ingress" {
+  # module.eks.aws_security_group_rule.cluster-ingress["all"] will be created
+  + resource "aws_security_group_rule" "cluster-ingress" {
+      + from_port                = 0
+      + id                       = (known after apply)
+      + protocol                 = "-1"
+      + security_group_id        = (known after apply)
+      + self                     = true
+      + source_security_group_id = (known after apply)
+      + to_port                  = 0
+      + type                     = "ingress"
+    }
+
+  # module.eks.aws_security_group_rule.cluster-ingress["https"] will be created
+  + resource "aws_security_group_rule" "cluster-ingress" {
+      + cidr_blocks              = (known after apply)
       + from_port                = 443
       + id                       = (known after apply)
-      + protocol                 = "tcp"
+      + protocol                 = (known after apply)
       + security_group_id        = (known after apply)
-      + self                     = false
+      + self                     = (known after apply)
       + source_security_group_id = (known after apply)
-      + to_port                  = 443
+      + to_port                  = (known after apply)
       + type                     = "ingress"
     }
 
-  # module.eks.aws_security_group_rule.worker_cluster will be created
-  + resource "aws_security_group_rule" "worker_cluster" {
-      + from_port                = 0
+  # module.eks.aws_security_group_rule.cluster-ingress["kubelet"] will be created
+  + resource "aws_security_group_rule" "cluster-ingress" {
+      + cidr_blocks              = (known after apply)
+      + from_port                = 10250
       + id                       = (known after apply)
-      + protocol                 = "-1"
+      + protocol                 = (known after apply)
       + security_group_id        = (known after apply)
-      + self                     = false
+      + self                     = (known after apply)
       + source_security_group_id = (known after apply)
-      + to_port                  = 65535
-      + type                     = "ingress"
-    }
-
-  # module.eks.aws_security_group_rule.worker_egress will be created
-  + resource "aws_security_group_rule" "worker_egress" {
-      + cidr_blocks              = [
-          + "0.0.0.0/0",
-        ]
-      + from_port                = 0
-      + id                       = (known after apply)
-      + protocol                 = "-1"
-      + security_group_id        = (known after apply)
-      + self                     = false
-      + source_security_group_id = (known after apply)
-      + to_port                  = 0
-      + type                     = "egress"
-    }
-
-  # module.eks.aws_security_group_rule.workers_self will be created
-  + resource "aws_security_group_rule" "workers_self" {
-      + from_port                = 0
-      + id                       = (known after apply)
-      + protocol                 = "-1"
-      + security_group_id        = (known after apply)
-      + self                     = false
-      + source_security_group_id = (known after apply)
-      + to_port                  = 65535
+      + to_port                  = (known after apply)
       + type                     = "ingress"
     }
 
@@ -704,7 +695,7 @@ Terraform will perform the following actions:
       + triggers = (known after apply)
     }
 
-Plan: 26 to add, 0 to change, 0 to destroy.
+Plan: 24 to add, 0 to change, 0 to destroy.
 
 ------------------------------------------------------------------------
 

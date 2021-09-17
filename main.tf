@@ -42,6 +42,8 @@ data "aws_iam_policy_document" "cluster_assume_role_policy" {
 }
 
 resource "aws_iam_role" "cluster" {
+  count = var.eks_cluster_role_arn != null ? 0 : 1
+
   name = format("EKS_control.%s", var.cluster_name)
 
   assume_role_policy    = data.aws_iam_policy_document.cluster_assume_role_policy.json
@@ -51,17 +53,23 @@ resource "aws_iam_role" "cluster" {
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
+  count = var.eks_cluster_role_arn != null ? 0 : 1
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.cluster.name
+  role       = aws_iam_role.cluster[count.index].name
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSServicePolicy" {
+  count = var.eks_cluster_role_arn != null ? 0 : 1
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = aws_iam_role.cluster.name
+  role       = aws_iam_role.cluster[count.index].name
 }
 
 /* create worker IAM role */
 data "aws_iam_policy_document" "worker_assume_role_policy" {
+  count = var.eks_cluster_role_arn != null ? 0 : 1
+
   statement {
     sid = "EKSWorkerAssumeRole"
 
@@ -77,40 +85,52 @@ data "aws_iam_policy_document" "worker_assume_role_policy" {
 }
 
 resource "aws_iam_role" "worker" {
+  count = var.eks_worker_role_arn != null ? 0 : 1
+
   name = format("EKS_worker.%s", var.cluster_name)
 
-  assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy.json
+  assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy[0].json
   force_detach_policies = true
 
   tags = merge(var.tags, local.tags)
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKSWorkerNodePolicy" {
+  count = var.eks_worker_role_arn != null ? 0 : 1
+  
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.worker.name
+  role       = aws_iam_role.worker[0].name
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKS_CNI_Policy" {
+  count = var.eks_worker_role_arn != null ? 0 : 1
+  
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.worker.name
+  role       = aws_iam_role.worker[0].name
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEC2ContainerRegistryReadOnly" {
+  count = var.eks_worker_role_arn != null ? 0 : 1
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.worker.name
+
+  role       = aws_iam_role.worker[0].name
 }
 
 resource "aws_iam_role_policy_attachment" "worker_existing" {
   count = local.worker_additional_policy_count
 
   policy_arn = length(split(":", var.worker_additional_policy[ count.index ])) > 1 ? var.worker_additional_policy[ count.index ] : format("arn:aws:iam::aws:policy/%s", var.worker_additional_policy[ count.index ])
-  role       = aws_iam_role.worker.name
+  role       = aws_iam_role.worker[count.index].name
 }
 
 resource "aws_iam_instance_profile" "worker" {
+  count = var.eks_worker_role_arn != null ? 0 : 1
+
   name = format("EKS_worker.%s", var.cluster_name)
 
-  role = aws_iam_role.worker.name
+  # role = var.eks_worker_role_arn != null ? format("EKS_worker.%s", var.cluster_name) : aws_iam_role.worker[0].name
+  role = aws_iam_role.worker[0].name
 
   tags = merge(var.tags, local.tags)
 }
@@ -122,7 +142,7 @@ resource "aws_iam_role" "kiam" {
   name = format("EKS_kiam.%s", var.cluster_name)
 
   assume_role_policy    = templatefile("${path.module}/templates/kiam/assume_role_policy.tmpl",
-                                       { role = aws_iam_role.worker.arn })
+                                       { role = aws_iam_role.worker[0].arn })
   force_detach_policies = true
 
   tags = merge(var.tags, local.tags)
@@ -162,7 +182,7 @@ resource "aws_iam_role_policy_attachment" "kiam_worker" {
   count = local.enable_kiam
 
   policy_arn = aws_iam_policy.kiam_worker[0].arn
-  role       = aws_iam_role.worker.name
+  role       = aws_iam_role.worker[0].name
 }
 
 resource "aws_eks_cluster" "this" {
@@ -172,8 +192,8 @@ resource "aws_eks_cluster" "this" {
   /* desired Kubernetes master version */
   version = var.cluster_version
 
-  //role_arn = "${var.cluster_role_arn}"
-  role_arn = aws_iam_role.cluster.arn
+  role_arn = var.eks_cluster_role_arn != null ? var.eks_cluster_role_arn : aws_iam_role.cluster[0].arn
+  //role_arn = aws_iam_role.cluster.arn
 
   enabled_cluster_log_types = var.enabled_cluster_logs
 
@@ -266,7 +286,7 @@ resource "aws_launch_configuration" "worker" {
                            lookup(var.worker_group[count.index], "security_groups",
                                                                  local.worker_group_defaults[ "security_groups" ]))
 
-  iam_instance_profile = aws_iam_instance_profile.worker.id
+  iam_instance_profile = format("EKS_worker.%s", var.cluster_name)
   image_id = lookup(var.worker_group[ count.index ], "image_id",
                                                      local.worker_group_defaults[ "image_id" ])
 
@@ -384,7 +404,7 @@ data "template_file" "worker_aws_auth" {
   template = file("${path.module}/templates/config-map-aws-auth.json.tmpl")
 
   vars = {
-    worker_role_arn = aws_iam_role.worker.arn
+    worker_role_arn = var.eks_worker_role_arn != null ? var.eks_worker_role_arn : aws_iam_role.worker[0].arn
     map_roles       = join(",", data.template_file.role_aws_auth.*.rendered)
   }
 }

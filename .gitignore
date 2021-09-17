@@ -28,3 +28,6 @@ override.tf.json
 
 # don't check in the repo_init.sh script (if it exists)
 repo_init.sh
+
+# Intellij config files
+.idea/

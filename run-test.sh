@@ -16,4 +16,12 @@ KST=(`aws sts assume-role --role-arn "arn:aws:iam::$ACCOUNT:role/$ROLE" \
                           --output text`)
 
 # call docker specifying the AWS credentials as build args
-docker build . --build-arg AWS_ACCESS_KEY_ID="${KST[0]}" --build-arg AWS_SECRET_ACCESS_KEY="${KST[1]}" --build-arg AWS_SESSION_TOKEN="${KST[2]}"
+CONTAINER_NAME=$(basename "$(pwd)")-test-run
+docker build . -t "$CONTAINER_NAME"
+
+# call docker specifying the AWS credentials as build args
+docker run -e AWS_ACCESS_KEY_ID="${KST[0]}" \
+           -e AWS_SECRET_ACCESS_KEY="${KST[1]}" \
+           -e AWS_SESSION_TOKEN="${KST[2]}" \
+           --mount type=bind,source="$(pwd)/test",target=/src/test \
+           "$CONTAINER_NAME"

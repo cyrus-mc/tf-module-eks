@@ -244,6 +244,10 @@ variable "cluster_delete_timeout" { default = "15m" }
 
 variable "cluster_subnet_id"           { type = list(string) }
 
+/* region specific variables */
+variable "eks_cluster_role_arn" { default = null }
+variable "eks_worker_role_arn" { default = null }
+
 variable "enabled_cluster_logs" {
   type    = list
   default = null
