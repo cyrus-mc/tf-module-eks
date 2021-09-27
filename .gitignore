@@ -31,3 +31,6 @@ repo_init.sh
 
 # Intellij config files
 .idea/
+
+# generated test output
+test/test.tfplan

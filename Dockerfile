@@ -1,4 +1,4 @@
-FROM dat-docker.jfrog.io/hashicorp/terraform:0.13.4 AS init
+FROM dat-docker.jfrog.io/hashicorp/terraform:0.14.11
 
 # copy in provider.tf to initialize and cache required providers
 WORKDIR /src/test
@@ -18,6 +18,5 @@ ENV AWS_SESSION_TOKEN=""
 # Refreshing state steps are not always in the same order, obtaining just the plan only
 ENTRYPOINT cd /src/test && terraform init --input=false && terraform get && \
            terraform plan -no-color | tee test.tfplan && \
-           sed -i -n '/------------------------------------------------------------------------/,$p' test.tfplan && \
            diff expected.tfplan test.tfplan && \
            echo "All tests passed!"
