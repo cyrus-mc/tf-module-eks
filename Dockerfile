@@ -1,4 +1,4 @@
-FROM dat-docker.jfrog.io/hashicorp/terraform:0.14.11
+FROM dat-docker.jfrog.io/hashicorp/terraform:0.15.5
 
 # copy in provider.tf to initialize and cache required providers
 WORKDIR /src/test

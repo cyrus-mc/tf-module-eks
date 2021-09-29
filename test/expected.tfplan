@@ -1,6 +1,6 @@
 
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
   + create
  <= read (data resources)
 
@@ -696,9 +696,7 @@ Terraform will perform the following actions:
 
 Plan: 24 to add, 0 to change, 0 to destroy.
 
-------------------------------------------------------------------------
+─────────────────────────────────────────────────────────────────────────────
 
-Note: You didn't specify an "-out" parameter to save this plan, so Terraform
-can't guarantee that exactly these actions will be performed if
-"terraform apply" is subsequently run.
-
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
