@@ -175,6 +175,7 @@ locals {
     subnets               = var.worker_subnet_id
     system_profile        = ""
     security_groups       = []
+    user_data             = null
   }
 
   sg_inbound_default = {

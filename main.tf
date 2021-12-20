@@ -290,10 +290,7 @@ resource "aws_launch_configuration" "worker" {
 
   key_name = lookup(each.value, "key_name", local.worker_group_defaults[ "key_name" ])
 
-  user_data = templatefile("${path.module}/templates/ignition.tmpl", { FILE_CONTENTS = base64encode(templatefile("${path.module}/templates/eks_config.tmpl", { input = merge(lookup(each.value, "settings", {}),
-                                                                                                                                                                             { CLUSTER_NAME = aws_eks_cluster.this.name,
-                                                                                                                                                                               B64_CLUSTER_CA = aws_eks_cluster.this.certificate_authority[0].data,
-                                                                                                                                                                               APISERVER_ENDPOINT = aws_eks_cluster.this.endpoint }) }))})
+  user_data = lookup(each.value, "user_data", local.worker_group_defaults[ "user_data" ])
 
   /* only enable ebs optimized for instance types that allow it */
   ebs_optimized = lookup(each.value, "ebs_optimized", lookup(local.ebs_optimized, lookup(each.value, "instance_type",
