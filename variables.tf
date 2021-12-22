@@ -176,6 +176,7 @@ locals {
     system_profile        = ""
     security_groups       = []
     user_data             = null
+    ebs_block_devices     = []
   }
 
   sg_inbound_default = {

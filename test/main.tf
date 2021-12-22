@@ -29,11 +29,23 @@ module "eks" {
         KUBELET_EXTRA_ARGS       = "--system-reserved=cpu=100m,memory=512Mi --node-labels=node.kubernetes.io/role=infrastructure"
         DNS_CLUSTER_IP           = "169.254.20.10"
       }
+//      ebs_block_devices = [
+ //       {
+  //        device_name = "/dev/sda"
+   //       size = "100"
+    //    }
+     // ]
     }
   }
 
   worker_group_defaults = {
     key_name = "development_operations"
+    ebs_block_devices = [
+      {
+        device_name = "/dev/sda"
+        size = "100"
+      }
+    ]
   }
 
   flux_config = {

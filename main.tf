@@ -306,6 +306,21 @@ resource "aws_launch_configuration" "worker" {
     delete_on_termination = true
   }
 
+  /* add additional EBS block devices */
+  dynamic "ebs_block_device" {
+    for_each = lookup(each.value, "ebs_block_devices", local.worker_group_defaults[ "ebs_block_devices" ])
+
+    content {
+      device_name           = ebs_block_device.value.device_name
+      volume_size           = ebs_block_device.value.size
+      snapshot_id           = lookup(ebs_block_device.value, "snapshot_id", null)
+      volume_type           = lookup(ebs_block_device.value, "volume_type", "standard")
+      encrypted             = lookup(ebs_block_device.value, "encrypted", false)
+      iops                  = lookup(ebs_block_device.value, "iops", null)
+      delete_on_termination = lookup(ebs_block_device.value, "delete_on_termination", true)
+    }
+  }
+
   lifecycle {
     create_before_destroy = true
   }

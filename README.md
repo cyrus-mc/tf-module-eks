@@ -63,6 +63,7 @@ Both worker_group and worker_group_defaults maps accept the following keys:
   `protect_from_scale_in` | Prevent AWS from scaling in, so that cluster-autoscaler is solely responsible. | boolean | `false`
   `root_volume_size`    | root volume size of workers instances. | string | `100`
   `root_volume_type`    | root volume type of workers instances, can be 'standard', 'gp2', or 'io1'. | string | `gp2`
+  `ebs_block_devices`   | List of EBS block devices to attach to instances. | list | `[]`
   `root_iops`           | The amount of provisioned IOPS. This must be set with a volume_type of 'io1'. | string | `0`
   `subnets`             | A comma delimited string of subnets to place the worker nodes in (ex: subnet-123,subnet-456,subnet-789). | list | `var.worker_subnet_id`
 
@@ -139,6 +140,12 @@ module "eks" {
       root_volume_size  = 200
       rool_volume_type  = "io"
       root_iops         = "2000"
+      ebs_block_devices = [
+        {
+          device_name = "/dev/sdf",
+          volume_size = "100"
+        }
+      ]
     }
   ]
 }
