@@ -544,15 +544,23 @@ resource "null_resource" "apply_flux_deployment" {
   ]
 }
 
-/* tag subnets accordingly
-   (https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go) */
+/* tag subnets accordingly (https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/deploy/subnet_discovery/) */
 resource "aws_ec2_tag" "private" {
-  for_each = toset(var.worker_subnet_id)
+  for_each = toset(var.private_subnet_id)
 
   resource_id = each.key
 
   key   = "kubernetes.io/role/internal-elb"
-  value = "true"
+  value = "1"
+}
+
+resource "aws_ec2_tag" "public" {
+  for_each = toset(var.public_subnet_id)
+
+  resource_id = each.key
+
+  key   = "kubernetes.io/role/elb"
+  value = "1"
 }
 
 resource "aws_iam_openid_connect_provider" "this" {

@@ -311,4 +311,7 @@ variable "proxy_ami"           { default = "ami-032509850cf9ee54e" }
 variable "proxy_key_name"  { default = "" }
 variable "proxy_subnet_id" { default = "" }
 
+variable "private_subnet_id" { default = [] }
+variable "public_subnet_id"  { default = [] }
+
 variable "tags" { default = {} }
