@@ -49,7 +49,7 @@ resource "aws_iam_role" "cluster" {
   assume_role_policy    = data.aws_iam_policy_document.cluster_assume_role_policy.json
   force_detach_policies = true
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
@@ -92,7 +92,7 @@ resource "aws_iam_role" "worker" {
   assume_role_policy    = data.aws_iam_policy_document.worker_assume_role_policy[0].json
   force_detach_policies = true
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "worker_AmazonEKSWorkerNodePolicy" {
@@ -132,7 +132,7 @@ resource "aws_iam_instance_profile" "worker" {
   # role = var.eks_worker_role_arn != null ? format("EKS_worker.%s", var.cluster_name) : aws_iam_role.worker[0].name
   role = aws_iam_role.worker[0].name
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 /* support for kiam */
@@ -145,7 +145,7 @@ resource "aws_iam_role" "kiam" {
                                        { role = aws_iam_role.worker[0].arn })
   force_detach_policies = true
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 resource "aws_iam_policy" "kiam" {
@@ -156,7 +156,7 @@ resource "aws_iam_policy" "kiam" {
   path = "/"
   policy = templatefile("${path.module}/templates/kiam/server_policy.tmpl", {})
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "kiam" {
@@ -175,7 +175,7 @@ resource "aws_iam_policy" "kiam_worker" {
   policy = templatefile("${path.module}/templates/kiam/worker_policy.tmpl",
                         { role = aws_iam_role.kiam[0].arn })
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "kiam_worker" {
@@ -219,7 +219,7 @@ resource "aws_eks_cluster" "this" {
     ]
   }
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 
   /* set implicit dependency */
   depends_on = [
@@ -236,7 +236,7 @@ resource "aws_security_group" "cluster" {
 
   vpc_id = data.aws_subnet.selected.vpc_id
 
-  tags = merge(var.tags, { "Name" = format("eks-additional-sg-%s", var.cluster_name) })
+  tags = merge(local.tags, { "Name" = format("eks-additional-sg-%s", var.cluster_name) })
 }
 
 /* use _rule resource as k8s will add rules based on ingress resources */
@@ -375,7 +375,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
   }
 
   dynamic "tag" {
-    for_each = var.tags
+    for_each = local.tags
 
     content {
       key = tag.key
@@ -387,12 +387,6 @@ resource "aws_autoscaling_group" "worker_per_az" {
   tag {
     key                 = "Name"
     value               = format("%s-%s", aws_eks_cluster.this.name, each.value.name)
-    propagate_at_launch = true
-  }
-
-  tag {
-    key                 = "kubernetes.io/cluster/${aws_eks_cluster.this.name}"
-    value               = "owned"
     propagate_at_launch = true
   }
 
@@ -574,5 +568,5 @@ resource "aws_iam_openid_connect_provider" "this" {
 
   thumbprint_list = []
 
-  tags = merge(var.tags, local.tags)
+  tags = local.tags
 }

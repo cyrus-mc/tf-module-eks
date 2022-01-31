@@ -233,9 +233,8 @@ locals {
   /*
     Default tags (local so you can't over-ride)
   */
-  tags = {
-    builtWith = "terraform"
-  }
+  tags = merge(var.tags, { builtWith: "terraform",
+                           format("kubernetes.io/cluster/%s", replace(var.cluster_name, ".", "-")): "owned" })
 }
 
 /* configure cluster (control plane) */
