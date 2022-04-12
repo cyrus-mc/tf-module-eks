@@ -1,3 +1,7 @@
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.this.identity[0].oidc[0].issuer
+}
+
 data "aws_caller_identity" "current" {}
 
 /* query AmazonEKS AMI for specific EKS version */
@@ -566,7 +570,7 @@ resource "aws_iam_openid_connect_provider" "this" {
     "sts.amazonaws.com"
   ]
 
-  thumbprint_list = []
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
 
   tags = local.tags
 }
