@@ -25,3 +25,6 @@ output "kubeconfig_json" {
 /* kiam outputs */
 output "kiam_server_role_arn"  { value = join("", aws_iam_role.kiam.*.arn) }
 output "identity_provider_arn" { value = join("", aws_iam_openid_connect_provider.this.*.arn) }
+
+/* aws oidc outputs */
+output "identity_provider_url" { value = join("", aws_iam_openid_connect_provider.this.*.url) }
