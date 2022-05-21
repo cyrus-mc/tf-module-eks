@@ -3,17 +3,8 @@
 ###############################################
 locals {
 
-  labels = { for key, settings in var.worker_group: key => flatten(regexall("node-labels=([^\\s]*)", lookup(lookup(settings, "settings", {}), "KUBELET_EXTRA_ARGS")))[0] }
-
-  label_tags = { for key, labels in local.labels: key =>  zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/label/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", labels))),
-                                                                 flatten(regexall("(?:[^=]*)=([^,]*),?", labels))) }
-
-  taints = { for key, settings in var.worker_group: key => flatten(regexall("register-with-taints=([^\\s]*)", lookup(lookup(settings, "settings", {}), "KUBELET_EXTRA_ARGS"))) }
-
-  label_taints = { for key, taints in local.taints: key => zipmap(formatlist("k8s.io/cluster-autoscaler/node-template/taint/%s", flatten(regexall("([^=]*)=(?:[^,]*),?", taints[0]))),
-                                                                  flatten(regexall("(?:[^=]*)=([^,]*),?", taints[0])))
-                     if length(taints) > 0
-                 }
+  label_tags   = { for key, group in var.worker_group: key => lookup(lookup(group, "settings", {}), "labels", {}) }
+  label_taints = { for key, group in var.worker_group: key => lookup(lookup(group, "settings", {}), "taints", {}) }
 
   kubeconfig_name     = var.kubeconfig_name == "" ? var.cluster_name : var.kubeconfig_name
   kubeconfig_template = var.enable_proxy ? "kubeconfig_proxy.tmpl" : "kubeconfig.tmpl"

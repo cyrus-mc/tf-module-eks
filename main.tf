@@ -361,7 +361,7 @@ resource "aws_autoscaling_group" "worker_per_az" {
     for_each = lookup(local.label_tags, each.value.index, {})
 
     content {
-      key                 = tag.key
+      key                 = format("k8s.io/cluster-autoscaler/node-template/label/%s", tag.key)
       value               = tag.value
       propagate_at_launch = true
     }
@@ -372,8 +372,8 @@ resource "aws_autoscaling_group" "worker_per_az" {
     for_each = lookup(local.label_taints, each.value.index, {})
 
     content {
-      key                 = tag.key
-      value               = tag.value
+      key                 = format("k8s.io/cluster-autoscaler/node-template/taint/%s", tag.key)
+      value               = join(",", tag.value)
       propagate_at_launch = true
     }
   }

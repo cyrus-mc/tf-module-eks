@@ -14,8 +14,11 @@ module "eks" {
       min_size           = 0
       image_id           = "ami-0dcb143eaaa2351b7"
       settings           = {
+        node_labels = {
+          "kiam/nodetype" = "server",
+          "kubernetes.io/role" = "kiam"
+        },
         ENFORCE_NODE_ALLOCATABLE = "pods",
-        KUBELET_EXTRA_ARGS       = "--system-reserved=cpu=100m,memory=512Mi --node-labels=kiam/nodetype=server,node.kubernetes.io/role=kiam --register-with-taints=kiam/nodetype=server:NoSchedule"
         DNS_CLUSTER_IP           = "169.254.20.10"
       }
     },
@@ -25,8 +28,11 @@ module "eks" {
       min_size           = 0
       image_id           = "ami-0dcb143eaaa2351b7"
       settings           = {
+        node_labels = {
+          "kubernetes.io/role" = "infrastructure"
+        },
         ENFORCE_NODE_ALLOCATABLE = "pods",
-        KUBELET_EXTRA_ARGS       = "--system-reserved=cpu=100m,memory=512Mi --node-labels=node.kubernetes.io/role=infrastructure"
+        KUBELET_EXTRA_ARGS       = "--system-reserved=cpu=100m,memory=512Mi"
         DNS_CLUSTER_IP           = "169.254.20.10"
       }
 //      ebs_block_devices = [
